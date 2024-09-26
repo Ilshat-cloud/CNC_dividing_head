@@ -111,6 +111,7 @@ static const int   User_Page_Adress[]={
   0x0800FC40,0x0800FC44,0x0800FC48,0x0800FC4C,0x0800FC50,0x0800FC54,0x0800FC58,0x0800FC5C,
   0x0800FC60,0x0800FC64};
 
+#define delay_for_sucsess_screen 1000
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
