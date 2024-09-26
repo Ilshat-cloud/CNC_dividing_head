@@ -36,6 +36,7 @@ struct button_without_fix {
   GPIO_PinState pos_previous;
   GPIO_PinState pos_out;
   GPIO_PinState pos_normal;
+  uint16_t hold_counter;
 };
 struct Step_DIR_EN_M_inv{
   uint8_t Step:1;               //step inverse 0-no
@@ -96,10 +97,10 @@ void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t
 extern IWDG_HandleTypeDef hiwdg;
 uint8_t flag=0, backlight_on=1, endswitches_direction=0,motor_in_use=0;  //screenchoise flag
 uint16_t tooth_sp=0, current_tooth=0;
-static struct button_without_fix UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},
-PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},
-ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET},
-SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET};
+static struct button_without_fix UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0};
 /* USER CODE END Variables */
 /* Definitions for mainTask */
 osThreadId_t mainTaskHandle;
@@ -398,8 +399,16 @@ void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t
   button->pos_current=HAL_GPIO_ReadPin(GPIOx,GPIO_Pin);
   if ((button->pos_previous==button->pos_current)&&(button->pos_current!=button->pos_normal)){
     button->pos_out=GPIO_PIN_SET;
+    if (button->hold_counter<6){
+      button->hold_counter++;
+    }else if(button->hold_counter<50){
+      button->hold_counter+=5;
+    }else if(button->hold_counter<250){
+      button->hold_counter+=20;
+    }
   }else{
     button->pos_out=GPIO_PIN_RESET;
+    button->hold_counter=0;
   }
 }
 
