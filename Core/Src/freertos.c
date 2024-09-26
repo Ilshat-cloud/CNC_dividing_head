@@ -455,7 +455,7 @@ uint32_t Flash_write(){
   HAL_FLASH_Unlock();
   Erase.TypeErase=FLASH_TYPEERASE_PAGES;
   Erase.PageAddress=User_Page_Adress[0];
-  Erase.NbPages=1;
+  Erase.NbPages=1;  //1kBytes
   HAL_FLASHEx_Erase(&Erase,&flash_ret);
   if (flash_ret==0xFFFFFFFF)
   {
