@@ -42,7 +42,7 @@ struct Step_DIR_EN_M_inv{
   uint8_t Step:1;               //step inverse 0-no
   uint8_t DIR:1;                //dir inverse 1-yes
   uint8_t EN:1;                 //En inverse 0-no
-  uint8_t Mot_Left:1;           //mot inverse 0-left
+  uint8_t Mot_Left:1;           //mot inverse 0-left CW or CCW
 };
 struct Motor{
   GPIO_PinState ReachCtrlPoint;         //feedback frrom me module
@@ -61,7 +61,7 @@ struct Motor M1 = {
   54000,             // Max_Speed
   0,                 // output_sp
   222,               // out_frequency
-  {0, 0, 0, 1},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
+  {0, 0, 0, 0},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
   0,                 //Speed Setpoint 0-100 direct
   0                  //Speed Setpoint 0-100 reverse   
 };
@@ -71,7 +71,7 @@ struct Motor M2 = {
   54000,             // Max_Speed
   0,                 // output_sp
   222,               // out_frequency
-  {0, 0, 0, 1},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
+  {0, 0, 0, 0},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
   0,                 //Speed Setpoint 0-100 direct
   0                  //Speed Setpoint 0-100 reverse  
 };
@@ -90,24 +90,31 @@ FLASH_EraseInitTypeDef Erase;
 /* USER CODE BEGIN PM */
 #define flash_read(address)  (*(uint32_t*) address)
 void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+void buttin_proc_without_tim(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 extern IWDG_HandleTypeDef hiwdg;
-uint8_t flag=0, backlight_on=1, endswitches_direction=0,motor_in_use=0;  //screenchoise flag
-uint16_t tooth_sp=0, current_tooth=0;
-static struct button_without_fix UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0};
+uint8_t flag=0, backlight_on=1, endswitches_direction=0,motor_in_use=0,startyem=0;  //screenchoise flag
+uint8_t tooth_sp=0, current_tooth=0;
+static struct button_without_fix  UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  RCP1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+                                  RCP2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0};
 /* USER CODE END Variables */
 /* Definitions for mainTask */
 osThreadId_t mainTaskHandle;
 const osThreadAttr_t mainTask_attributes = {
   .name = "mainTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal3,
 };
 /* Definitions for ButtonProcessin */
 osThreadId_t ButtonProcessinHandle;
@@ -191,6 +198,7 @@ void MX_FREERTOS_Init(void) {
 void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
+  osDelay(100);
   /* Infinite loop */
   for(;;)
   {
@@ -210,6 +218,7 @@ void StartMainTask(void *argument)
 void StartButtonProcessing(void *argument)
 {
   /* USER CODE BEGIN StartButtonProcessing */
+  osDelay(100);
   /* Infinite loop */
   for(;;)
   {
@@ -218,8 +227,10 @@ void StartButtonProcessing(void *argument)
     buttin_proc(&PLUS_btn,Btn_Plus_GPIO_Port,Btn_Plus_Pin);
     buttin_proc(&MINUS_btn,Btn_Minus_GPIO_Port,Btn_Minus_Pin);
     buttin_proc(&ENTER_btn,Btn_Enter_GPIO_Port,Btn_Enter_Pin);
-    buttin_proc(&SW1_btn,EndSW1_GPIO_Port,EndSW1_Pin);
-    buttin_proc(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
+    buttin_proc_without_tim(&SW1_btn,EndSW1_GPIO_Port,EndSW1_Pin);
+    buttin_proc_without_tim(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
+    buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
+    buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
     
     
     osDelay(20);
@@ -239,8 +250,9 @@ void StartLedProcessing(void *argument)
   /* USER CODE BEGIN StartLedProcessing */
   /* Infinite loop */
   char R[16];
+  InitializeLCD();
   osDelay(500);
-  uint8_t screen_substrate=1;
+  uint8_t screen_substrate=1, screen_cursor=0, screen_enter_set=0;
   
   /* Infinite loop */
   for(;;)
@@ -265,7 +277,68 @@ void StartLedProcessing(void *argument)
       
       sprintf(R,"%02d",M2.Speed_reverse_sp);
       PrintByCoordinats(1,13,R);
-
+      switch(screen_cursor){
+        case 0:
+          Cursor(0,0);          //default state for each screen
+          screen_enter_set=0;
+          break;
+        case 1:
+          Cursor(0,5);          //set setpoint 1-255 plus and minus
+          if (ENTER_btn.pos_out){
+            screen_enter_set=1;
+          }
+          if(screen_enter_set){
+            if (PLUS_btn.pos_out){
+              
+              (screen_cursor<5)?screen_cursor++:0;
+            }
+            if (MINUS_btn.pos_out){
+              
+              (screen_cursor>0)?screen_cursor--:0;
+            }
+          }
+          break;
+        case 2:
+          Cursor(0,8);          //enter to start or stop process
+          if (ENTER_btn.pos_out){
+            screen_enter_set=0;
+            screen_cursor=0;
+            flag=8;  //startyem!!!
+            startyem=1;
+            break;  //this break will set us to next scan;
+          }
+          break;
+        case 3:
+          Cursor(0,14);          //enter to settings menu go to next screen
+          if (ENTER_btn.pos_out){
+            screen_enter_set=0;
+            screen_cursor=0;
+            flag++;
+            break;  //this break will set us to next scan;
+          }
+          break;
+        case 4:
+          Cursor(1,4);          //enter to increase or decrease M2 speed SP 0-99%
+          break;
+        case 5:
+          Cursor(1,14);          //enter to increase or decrease M2r(reverce) speed SP 0-99%
+          break;
+      }
+      if (screen_enter_set){
+        if (UP_btn.pos_out){
+          screen_enter_set=0;
+          screen_cursor=0;
+        }
+      
+      }else{
+        if (PLUS_btn.pos_out){
+          tooth_sp++;
+        }
+        if (MINUS_btn.pos_out){
+          tooth_sp--;
+        }
+      }
+      
       break; 
     case 1:  //settings indication screen
       if(flag!=screen_substrate){
@@ -385,7 +458,7 @@ void StartLedProcessing(void *argument)
       PrintByCoordinats(1,15,(SW2_btn.pos_out?"1":"0"));
       break;
     }
-    osDelay(350);    
+    osDelay(150);    
     
   }
   /* USER CODE END StartLedProcessing */
@@ -406,6 +479,18 @@ void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t
     }else if(button->hold_counter<250){
       button->hold_counter+=20;
     }
+  }else{
+    button->pos_out=GPIO_PIN_RESET;
+    button->hold_counter=0;
+  }
+}
+
+
+void buttin_proc_without_tim(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin){
+  button->pos_previous=button->pos_current;
+  button->pos_current=HAL_GPIO_ReadPin(GPIOx,GPIO_Pin);
+  if ((button->pos_previous==button->pos_current)&&(button->pos_current!=button->pos_normal)){
+    button->pos_out=GPIO_PIN_SET;
   }else{
     button->pos_out=GPIO_PIN_RESET;
     button->hold_counter=0;
