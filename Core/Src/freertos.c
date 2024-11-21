@@ -289,13 +289,12 @@ void StartLedProcessing(void *argument)
           }
           if(screen_enter_set){
             if (PLUS_btn.pos_out){
-              
-              (screen_cursor<5)?screen_cursor++:0;
+              tooth_sp++;
             }
             if (MINUS_btn.pos_out){
-              
-              (screen_cursor>0)?screen_cursor--:0;
+              tooth_sp--;
             }
+            
           }
           break;
         case 2:
@@ -329,13 +328,15 @@ void StartLedProcessing(void *argument)
           screen_enter_set=0;
           screen_cursor=0;
         }
-      
+        
       }else{
         if (PLUS_btn.pos_out){
-          tooth_sp++;
+          
+          (screen_cursor<5)?screen_cursor++:0;
         }
         if (MINUS_btn.pos_out){
-          tooth_sp--;
+          
+          (screen_cursor>0)?screen_cursor--:0;
         }
       }
       
