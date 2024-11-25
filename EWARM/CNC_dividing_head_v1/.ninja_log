@@ -39,3 +39,6 @@
 789	1525	7538878470617885	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal_uart.o	bcc654ab519526f
 773	2137	7538878476703785	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal_tim.o	9a31960995238d7b
 12	418	7538878459416866	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Obj/Core_13247989168731456611.dir/wh1602.o	b07db1e633db3d4
+7	717	7542320382896890	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Obj/Core_13247989168731456611.dir/freertos.o	95d4a41124e0e55d
+718	940	7542320385114408	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Exe/CNC_dividing_head_v1.out	e0181817849810f7
+941	958	7542320385519858	C:/Users/user/Documents/CNC_dividing_head/EWARM/CNC_dividing_head_v1/Exe/CNC_dividing_head_v1.hex	f266ad8c388f6a49
