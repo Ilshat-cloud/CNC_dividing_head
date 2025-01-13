@@ -1,6 +1,6 @@
 EWARM/settings/
+EWARM/CNC_dividing_head_v1/
 
-EWARM/CNC_dividing_head_v1/BrowseInfo/.ninja_deps
 EWARM/CNC_dividing_head_v1/BrowseInfo/.ninja_log
 EWARM/CNC_dividing_head_v1/BrowseInfo/CNC_dividing_head_v1_part0.pbi
 EWARM/CNC_dividing_head_v1/BrowseInfo/CNC_dividing_head_v1_part1.pbi
@@ -84,3 +84,4 @@ EWARM/CNC_dividing_head_v1/BrowseInfo/STM32F1xx_HAL_Driver_9701002599162248031.d
 EWARM/CNC_dividing_head_v1/BrowseInfo/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal.pbi
 EWARM/settings/CNC_dividing_head_v1.dnx
 EWARM/settings/Project.wsdt
+EWARM/CNC_dividing_head_v1/BrowseInfo/.ninja_deps

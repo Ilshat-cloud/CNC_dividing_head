@@ -95,11 +95,12 @@ void buttin_proc_without_tim(struct button_without_fix *button,GPIO_TypeDef *GPI
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN Variables */
+/* USER CODE BEGIN Variables */  
 extern IWDG_HandleTypeDef hiwdg;
-uint8_t flag=0, backlight_on=1, endswitches_direction=0,motor_in_use=0,startyem=0;  //screenchoise flag
+uint8_t flag=0, backlight_on=1,motor_in_use=0,startyem=0;  //screenchoise flag
 uint8_t tooth_sp=0, current_tooth=0;
 int16_t Deept_of_cut_mm=0, Deept_of_cut_pulses=0; 
+uint16_t Delay_switching=0;
 static struct button_without_fix  UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
                                   DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
                                   PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
@@ -437,12 +438,13 @@ void StartLedProcessing(void *argument)
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
-        PrintStr("Sw1_i:x         ");
+        PrintStr("Sw1_i:x Del:XXXX");  //del-delay betwen switching motors (in case if you dont use RCP)
         Cursor(1,0);
         PrintStr("Sw2_i:x F1:1F2:1");
       }
-      
       PrintByCoordinats(0,6,(SW1_btn.pos_normal?"0":"1"));
+      sprintf(R,"%04d",Delay_switching);  
+      PrintByCoordinats(0,12,R);
       PrintByCoordinats(1,6,(SW2_btn.pos_normal?"0":"1"));
       PrintByCoordinats(1,11,((M1.ReachCtrlPoint_avalible>0)?((M1.ReachCtrlPoint_avalible==1)?"1":"2"):"0"));
       PrintByCoordinats(1,15,((M2.ReachCtrlPoint_avalible>0)?((M2.ReachCtrlPoint_avalible==1)?"1":"2"):"0"));
@@ -465,7 +467,27 @@ void StartLedProcessing(void *argument)
           }
         }
         break;
-      case 2:
+       case 2:
+        Cursor(0,12);          
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            Delay_switching+=PLUS_btn.hold_counter;
+            if (Delay_switching>5000){
+              Delay_switching=5000;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            Delay_switching-=PLUS_btn.hold_counter;
+            if (Delay_switching>5000){
+              Delay_switching=0;
+            }
+          }
+        }
+        break;
+      case 3:
         Cursor(1,6);          
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
@@ -479,7 +501,7 @@ void StartLedProcessing(void *argument)
           }
         }
         break;
-      case 3:
+      case 4:
         Cursor(1,11);          
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
@@ -499,7 +521,7 @@ void StartLedProcessing(void *argument)
           }
         }
         break;  
-      case 4:
+      case 5:
         Cursor(1,15);          
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
@@ -528,7 +550,7 @@ void StartLedProcessing(void *argument)
       }else{
         if (PLUS_btn.pos_out){
           
-          (screen_cursor<3)?screen_cursor++:0;
+          (screen_cursor<4)?screen_cursor++:0;
         }
         if (MINUS_btn.pos_out){
           
@@ -707,13 +729,13 @@ void StartLedProcessing(void *argument)
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
-        PrintStr("M1_P:XXXXXX Test");
+        PrintStr("M1_P:XXXXX  Test");
         Cursor(1,0);
-        PrintStr("M2_P:XXXXXX Test");
+        PrintStr("M2_P:XXXXX  Test");
       }
-      sprintf(R,"%06d",M1.Pulses_per_rev);  
+      sprintf(R,"%05d",M1.Pulses_per_rev);  
       PrintByCoordinats(0,5,R);
-      sprintf(R,"%06d",M2.Pulses_per_rev);  
+      sprintf(R,"%05d",M2.Pulses_per_rev);  
       PrintByCoordinats(1,5,R);
       
       switch(screen_cursor){
@@ -729,13 +751,13 @@ void StartLedProcessing(void *argument)
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
             M1.Pulses_per_rev+=PLUS_btn.hold_counter;
-            if (M1.Pulses_per_rev>20000){
-              M1.Pulses_per_rev=20000;
+            if (M1.Pulses_per_rev>50000){
+              M1.Pulses_per_rev=50000;
             }
           }
           if (MINUS_btn.pos_out){
             M1.Pulses_per_rev-=PLUS_btn.hold_counter;
-            if (M1.Pulses_per_rev>20000){
+            if (M1.Pulses_per_rev>50000){
               M1.Pulses_per_rev=0;
             }
           }
@@ -803,7 +825,79 @@ void StartLedProcessing(void *argument)
       sprintf(R,"%05d",M1.Max_Speed);  
       PrintByCoordinats(0,5,R);
       sprintf(R,"%05d",M2.Max_Speed);  
-      PrintByCoordinats(1,5,R);      
+      PrintByCoordinats(1,5,R);  
+           switch(screen_cursor){
+      case 0:
+        Cursor(0,0);          //default state for each screen
+        screen_enter_set=0;
+        break;
+      case 1:
+        Cursor(0,5);          
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M1.Max_Speed+=PLUS_btn.hold_counter;
+            if (M1.Max_Speed>10000){
+              M1.Max_Speed=10000;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            M1.Max_Speed-=PLUS_btn.hold_counter;
+            if (M1.Max_Speed>10000){
+              M1.Max_Speed=0;
+            }
+          }
+        }
+        break;
+      case 2:    
+         Cursor(0,12); 
+        break;      
+      case 3:   
+        Cursor(1,5);          
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Max_Speed+=PLUS_btn.hold_counter;
+            if (M2.Max_Speed>10000){
+              M2.Max_Speed=10000;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            M2.Max_Speed-=PLUS_btn.hold_counter;
+            if (M2.Max_Speed>10000){
+              M2.Max_Speed=0;
+            }
+          }
+        }
+        break;
+      case 4:     
+          Cursor(1,12); 
+        break;
+      }
+      
+      if (screen_enter_set){
+        if (UP_btn.pos_out){
+          screen_enter_set=0;
+          screen_cursor=0;
+        }
+      }else{
+        if (PLUS_btn.pos_out){
+          
+          (screen_cursor<4)?screen_cursor++:0;
+        }
+        if (MINUS_btn.pos_out){
+          
+          (screen_cursor>0)?screen_cursor--:0;
+        }
+        if (DOWN_btn.pos_out){
+          flag=6;  //go to next menu  
+          screen_cursor=0;
+        }
+      }
       break; 
       //=========================screen5==============================================//
       
@@ -816,6 +910,7 @@ void StartLedProcessing(void *argument)
         Cursor(1,0);
         PrintStr("****************"); 
         osDelay(delay_for_sucsess_screen);
+        flag=0;
       }
       break; 
       //=========================screen6==============================================//
@@ -903,6 +998,7 @@ uint32_t Flash_write(){
   Erase.TypeErase=FLASH_TYPEERASE_PAGES;
   Erase.PageAddress=User_Page_Adress[0];
   Erase.NbPages=1;  //1kBytes
+  //  Delay_switching backlight_on tooth_sp Deept_of_cut_mm Deept_of_cut_pulses M1
   HAL_FLASHEx_Erase(&Erase,&flash_ret);
   if (flash_ret==0xFFFFFFFF)
   {
