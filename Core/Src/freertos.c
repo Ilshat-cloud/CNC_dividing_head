@@ -55,7 +55,7 @@ struct Motor{
   uint8_t       ReachCtrlPoint_avalible; //0 not used, 1 wait for set, 2 waiting for reset
 };
 
-struct Motor M1 = {
+struct Motor M1 = {  //мотор дл€ поворота
   GPIO_PIN_RESET,    // ReachCtrlPoint
   72000,             // Pulses_per_rev
   54000,             // Max_Speed
@@ -97,10 +97,12 @@ void buttin_proc_without_tim(struct button_without_fix *button,GPIO_TypeDef *GPI
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */  
 extern IWDG_HandleTypeDef hiwdg;
-uint8_t flag=0, backlight_on=1,motor_in_use=0,startyem=0;  //screenchoise flag
+uint8_t flag=0, backlight_on=1,motor_in_use=0,startyem=0,error=0;  //screenchoise flag
 uint8_t tooth_sp=0, current_tooth=0;
-int16_t Deept_of_cut_mm=0, Deept_of_cut_pulses=0; 
+int16_t Deept_of_cut_mm=0; 
 uint16_t Delay_switching=0;
+uint32_t Pulses_for_tooth=0;
+int32_t Pulses_for_deptofcut=0; //may be in bouth directions
 static struct button_without_fix  UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
                                   DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
                                   PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
@@ -200,12 +202,24 @@ void MX_FREERTOS_Init(void) {
 void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
+
   osDelay(100);
   /* Infinite loop */
   for(;;)
   {
     HAL_IWDG_Refresh(&hiwdg);
-    osDelay(100);
+
+    osDelay(10);
+    if(flag==SCREEN_STARTUEM){
+      if(SW1_btn.pos_out)
+      {
+        error=ERROR_SW1;
+      }
+      if(SW2_btn.pos_out)
+      {
+        error=ERROR_SW2;
+      }
+    }
   }
   /* USER CODE END StartMainTask */
 }
@@ -233,8 +247,6 @@ void StartButtonProcessing(void *argument)
     buttin_proc_without_tim(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
     buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
     buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
-    
-    
     osDelay(20);
   }
   /* USER CODE END StartButtonProcessing */
@@ -261,7 +273,7 @@ void StartLedProcessing(void *argument)
   {
     switch(flag){
       //------------------------------screen0--------------------------------------//
-    case 0:  //default screen
+    case SCREEN_MAIN:  //default screen
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -318,7 +330,7 @@ void StartLedProcessing(void *argument)
         }
         break;
       case 3:
-        Cursor(1,2);          //enter to increase or decrease M2 speed SP 0-99%
+        Cursor(1,2);          //enter to increase or decrease deept of cut
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
         }
@@ -340,9 +352,13 @@ void StartLedProcessing(void *argument)
       case 4:
         Cursor(0,11);          //enter to start or stop process
         if (ENTER_btn.pos_out){
+          if (tooth_sp){
+            Pulses_for_tooth=M1.Pulses_per_rev/tooth_sp;
+          }
+          Pulses_for_deptofcut=M2.Pulses_per_rev*Deept_of_cut_mm;
           screen_enter_set=0;
           screen_cursor=0;
-          flag=8;  //startyem!!!
+          flag=SCREEN_STARTUEM;  //startyem!!!
           startyem=1;
           break;  //this break will set us to next scan;
         }
@@ -364,7 +380,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
-          flag=1;  //go to endswitches indication  
+          flag=SCREEN_MAIN2;  //go to endswitches indication  
           screen_cursor=0;
         }
       }
@@ -373,7 +389,7 @@ void StartLedProcessing(void *argument)
       //=========================screen0==============================================//
       
       //------------------------------screen1--------------------------------------//
-    case 1:  //settings indication screen
+    case SCREEN_MAIN2:  //settings indication screen
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -394,7 +410,7 @@ void StartLedProcessing(void *argument)
         if (ENTER_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
-          flag=2;
+          flag=SCREEN_SETTINGS1;
           break;  //this break will set us to next scan;
         } 
       }else if (screen_cursor==2){
@@ -426,7 +442,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (UP_btn.pos_out){
-          flag=0;  //go to endswitches indication  
+          flag=SCREEN_MAIN;  //go to endswitches indication  
           screen_cursor=0;
         }
       }
@@ -434,7 +450,7 @@ void StartLedProcessing(void *argument)
             //=========================screen1==============================================//
       
       //------------------------------screen2--------------------------------------//
-    case 2:  //settings reach contrl piont check and endswitches
+    case SCREEN_SETTINGS1:  //settings reach contrl piont check and endswitches
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -557,7 +573,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
-          flag=3;  //go to next menu  
+          flag=SCREEN_SETTINGS2;  //go to next menu  
           screen_cursor=0;
         }
       }
@@ -565,7 +581,7 @@ void StartLedProcessing(void *argument)
       //=========================screen2==============================================//
       
       //------------------------------screen3--------------------------------------//
-    case 3:   //motor out signal inversions
+    case SCREEN_SETTINGS2:   //motor out signal inversions
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -716,7 +732,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
-          flag=4;  //go to next menu  
+          flag=SCREEN_SETTINGS3;  //go to next menu  
           screen_cursor=0;
         }
       }
@@ -725,7 +741,7 @@ void StartLedProcessing(void *argument)
       //=========================screen3==============================================//
       
       //------------------------------screen4--------------------------------------//
-    case 4:   //motor puleses per revolution
+    case SCREEN_SETTINGS3:   //motor puleses per revolution
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -805,7 +821,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
-          flag=5;  //go to next menu  
+          flag=SCREEN_SETTINGS4;  //go to next menu  
           screen_cursor=0;
         }
       }
@@ -814,7 +830,7 @@ void StartLedProcessing(void *argument)
       //=========================screen4==============================================//
       
       //------------------------------screen5--------------------------------------//
-    case 5:   //motor max speed, may be in future here will be autodjust according to RCP pin
+    case SCREEN_SETTINGS4:   //motor max speed, may be in future here will be autodjust according to RCP pin
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -894,7 +910,7 @@ void StartLedProcessing(void *argument)
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
-          flag=6;  //go to next menu  
+          flag=SCREEN_MAIN;  //go to next menu  
           screen_cursor=0;
         }
       }
@@ -902,7 +918,7 @@ void StartLedProcessing(void *argument)
       //=========================screen5==============================================//
       
       //------------------------------screen6--------------------------------------//
-    case 6:  //screen sucsess
+    case SCREEN_SUCSESS:  //screen sucsess
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -910,26 +926,55 @@ void StartLedProcessing(void *argument)
         Cursor(1,0);
         PrintStr("****************"); 
         osDelay(delay_for_sucsess_screen);
-        flag=0;
+        flag=SCREEN_MAIN;
       }
       break; 
       //=========================screen6==============================================//
       
       //------------------------------screen7--------------------------------------//
-    case 7:
+    case SCREEN_ERROR:
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
         PrintStr("  Error:        ");
         Cursor(1,0);
-        PrintStr("****************"); 
-        osDelay(delay_for_sucsess_screen);
+        switch (error){
+        case ERROR_NONE:
+          PrintStr("****************"); 
+          break;
+        case ERROR_SW1:
+          PrintStr("END Switch 1    "); 
+          break;
+        case ERROR_SW2:
+          PrintStr("END Switch 2    "); 
+          break;
+        case ERROR_RCP1_TIMEOUT:
+          PrintStr("timeout CTRLP M1"); 
+          break;
+        case ERROR_RCP2_TIMEOUT:
+          PrintStr("timeout CTRLP M2"); 
+          break;
+        case ERROR_SYSTEM:
+          PrintStr("zvonit_4et_ne_to"); 
+          break;    
+        case ERROR_FLASH_W:
+          PrintStr("Flash err write "); 
+          break;           
+        case ERROR_FLASH_R:
+          PrintStr("Flash error read"); 
+          break;      
+        }
+        
+      }
+      if (UP_btn.pos_out){
+        error=ERROR_NONE;
+        flag=SCREEN_MAIN;
       }
       break;    
       //=========================screen7==============================================//
       
       //------------------------------screen8--------------------------------------//
-    case 8:  //in work
+    case SCREEN_STARTUEM:  //in work
       if(flag!=screen_substrate){
         screen_substrate=flag;
         Cursor(0,0);
@@ -946,6 +991,8 @@ void StartLedProcessing(void *argument)
       PrintByCoordinats(1,11,(M2.ReachCtrlPoint?"1":"0"));
       PrintByCoordinats(1,14,(SW1_btn.pos_out?"1":"0"));
       PrintByCoordinats(1,15,(SW2_btn.pos_out?"1":"0"));
+      
+      
       break;
       //=========================screen8==============================================//
     }
@@ -955,13 +1002,19 @@ void StartLedProcessing(void *argument)
     }else{
       HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_RESET);
     }
+    if(error){
+      flag=SCREEN_ERROR;
+    }
   }
   /* USER CODE END StartLedProcessing */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+/*
+провер€ем только pos_out, он зависит от нормального положени€ кнопки и выставл€етс€ через 2 скана нажати€ (фильтр дребезга + конденсаторы на плате еще)
+так же есть счетчик дл€ удержани€, в общем все нормалды
+*/
 void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin){
   button->pos_previous=button->pos_current;
   button->pos_current=HAL_GPIO_ReadPin(GPIOx,GPIO_Pin);
@@ -1006,6 +1059,7 @@ uint32_t Flash_write(){
   if (HAL_FLASHEx_Erase(&Erase, &flash_ret) != HAL_OK) {
     HAL_FLASH_Lock();
     taskEXIT_CRITICAL();
+    error=ERROR_FLASH_W;
     return flash_ret;
   }
    // ”паковка данных кнопок (9 бит)
@@ -1054,6 +1108,7 @@ void Flash_read() {
   // „тение данных кнопок
   uint32_t buttons_data = flash_read(User_Page_Adress[0]);
   if (buttons_data==0xFF){
+    error=ERROR_FLASH_R;
     return; //в первый раз? 
   }
   UP_btn.pos_normal = (GPIO_PinState)((buttons_data >> 0) & 0x01);

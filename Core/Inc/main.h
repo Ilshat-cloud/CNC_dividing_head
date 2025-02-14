@@ -112,6 +112,33 @@ static const int   User_Page_Adress[]={
   0x0800FC60,0x0800FC64};
 
 #define delay_for_sucsess_screen 1000
+
+typedef enum {
+    SCREEN_MAIN,
+    SCREEN_MAIN2,
+    SCREEN_SETTINGS1,
+    SCREEN_SETTINGS2,
+    SCREEN_SETTINGS3,
+    SCREEN_SETTINGS4,
+    SCREEN_SUCSESS,
+    SCREEN_ERROR,
+    SCREEN_STARTUEM,
+    TOTAL_SCREENS
+} ScreenID;
+
+
+typedef enum {
+    ERROR_NONE,
+    ERROR_SW1,
+    ERROR_SW2,
+    ERROR_RCP1_TIMEOUT,
+    ERROR_RCP2_TIMEOUT,
+    ERROR_SYSTEM,
+    ERROR_FLASH_W,
+    ERROR_FLASH_R,
+    TOTAL_ERRORS
+} Eror_summary;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

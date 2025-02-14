@@ -132,3 +132,5 @@ EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm3
 EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal_tim.o
 EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal_uart.o
 EWARM/CNC_dividing_head_v1/Obj/STM32F1xx_HAL_Driver_9701002599162248031.dir/stm32f1xx_hal.o
+
+EWARM/settings/Project.wsdt
