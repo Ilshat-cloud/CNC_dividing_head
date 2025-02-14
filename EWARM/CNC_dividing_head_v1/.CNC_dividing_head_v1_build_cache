@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BuildDb>
+    <Tool>
+        <Name>linker</Name>
+        <Parent>
+            <Path>C:\Users\user\Documents\CNC_dividing_head\EWARM\CNC_dividing_head_v1\Exe\CNC_dividing_head_v1.out</Path>
+            <Output>
+                <Path>C:\Users\user\Documents\CNC_dividing_head\EWARM\CNC_dividing_head_v1\List\CNC_dividing_head_v1.map</Path>
+            </Output>
+        </Parent>
+    </Tool>
+</BuildDb>

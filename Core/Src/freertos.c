@@ -957,6 +957,58 @@ void StartLedProcessing(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+uint32_t Flash_write(){
+  taskENTER_CRITICAL();
+  uint32_t flash_ret;
+  HAL_FLASH_Unlock();
+  Erase.TypeErase=FLASH_TYPEERASE_PAGES;
+  Erase.PageAddress=User_Page_Adress[0];
+  Erase.NbPages=1;
+  HAL_FLASHEx_Erase(&Erase,&flash_ret);
+  if (flash_ret==0xFFFFFFFF)
+  {
+//    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[0],(MAX_EU&0x0000FFFF)|((MIN_EU<<16)&0xFFFF0000));
+//    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[1],(direct&0x000000FF)|((sensor<<8)&0x0000FF00)|((brightness<<16)&0xFFFF0000));
+//    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[2],(hysteresys&0x000000FF)|((P1<<8)&0x0000FF00)|((I1<<16)&0x00FF0000)|((D1<<24)&0xFF000000));
+//    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[3],(autostart&0x000000FF)|((point_num<<8)&0x0000FF00));
+//
+//    
+    
+    HAL_FLASH_Lock();
+  }
+  taskEXIT_CRITICAL();
+  return flash_ret;
+  
+}
+
+void Flash_read(){
+  //-------------------------Flash---------------------//
+  if (flash_read(User_Page_Adress[0])!=0xFFFFFFFF)
+  {
+   
+//    MAX_EU=flash_read(User_Page_Adress[0]);
+//    MIN_EU=flash_read(User_Page_Adress[0])>>16;
+//    direct=flash_read(User_Page_Adress[1]);
+//    sensor=flash_read(User_Page_Adress[1])>>8;
+//    brightness=flash_read(User_Page_Adress[1])>>16;
+//    hysteresys=flash_read(User_Page_Adress[2]);
+//    P1=flash_read(User_Page_Adress[2])>>8;  
+//    I1=flash_read(User_Page_Adress[2])>>16;
+//    D1=flash_read(User_Page_Adress[2])>>24; 
+//    autostart=flash_read(User_Page_Adress[3]);
+//    point_num=flash_read(User_Page_Adress[3])>>8;  
+//    for (flash_i=0;flash_i<20;flash_i++)
+//    {
+//      point[flash_i].Minuts=flash_read(User_Page_Adress[flash_i+4]);
+//      point[flash_i].Sec=flash_read(User_Page_Adress[flash_i+4])>>8;
+//      point[flash_i].target=flash_read(User_Page_Adress[flash_i+4])>>16;  
+//    }
+  }
+  
+  //====================================================//
+}
+
+
 
 void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin){
   button->pos_previous=button->pos_current;
