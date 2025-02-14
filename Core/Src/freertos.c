@@ -50,7 +50,7 @@ struct Motor{
   uint16_t      Max_Speed;              //max speed of motor pulses/sec
   uint16_t      output_sp;              //how many impulses we have to send
   uint16_t      out_frequency;          //how fast we will send our impulses //todo double check 
-  struct        Step_DIR_EN_M_inv;      //magic number for inversion of output pins
+  struct        Step_DIR_EN_M_inv Step_DIR_EN_M_inv;      //magic number for inversion of output pins
   uint8_t       Speed_sp;               //0-100% speed SP from settings
   uint8_t       ReachCtrlPoint_avalible; //0 not used, 1 wait for set, 2 waiting for reset
 };
@@ -151,7 +151,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  
+  Flash_read();
   /* USER CODE END Init */
   
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -574,14 +574,14 @@ void StartLedProcessing(void *argument)
         PrintStr("M2:L StDirEn:111");
       }
       
-      PrintByCoordinats(0,3,(M1.Mot_Left?"L":"R"));
-      PrintByCoordinats(0,13,(M1.Step?"1":"0"));
-      PrintByCoordinats(0,14,(M1.DIR?"1":"0"));
-      PrintByCoordinats(0,15,(M1.EN?"1":"0"));
-      PrintByCoordinats(1,3,(M2.Mot_Left?"L":"R"));
-      PrintByCoordinats(1,13,(M2.Step?"1":"0"));
-      PrintByCoordinats(1,14,(M2.DIR?"1":"0"));
-      PrintByCoordinats(1,15,(M2.EN?"1":"0"));
+      PrintByCoordinats(0,3,(M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R"));
+      PrintByCoordinats(0,13,(M1.Step_DIR_EN_M_inv.Step?"1":"0"));
+      PrintByCoordinats(0,14,(M1.Step_DIR_EN_M_inv.DIR?"1":"0"));
+      PrintByCoordinats(0,15,(M1.Step_DIR_EN_M_inv.EN?"1":"0"));
+      PrintByCoordinats(1,3,(M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R"));
+      PrintByCoordinats(1,13,(M2.Step_DIR_EN_M_inv.Step?"1":"0"));
+      PrintByCoordinats(1,14,(M2.Step_DIR_EN_M_inv.DIR?"1":"0"));
+      PrintByCoordinats(1,15,(M2.Step_DIR_EN_M_inv.EN?"1":"0"));
       
       switch(screen_cursor){
       case 0:
@@ -595,10 +595,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M1.Mot_Left=1;
+            M1.Step_DIR_EN_M_inv.Mot_Left=1;
           }
           if (MINUS_btn.pos_out){
-            M1.Mot_Left=0;
+            M1.Step_DIR_EN_M_inv.Mot_Left=0;
           }
         }
         break;
@@ -609,10 +609,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M1.Step=1;
+            M1.Step_DIR_EN_M_inv.Step=1;
           }
           if (MINUS_btn.pos_out){
-            M1.Step=0;
+            M1.Step_DIR_EN_M_inv.Step=0;
           }
         }
         break;
@@ -623,10 +623,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M1.DIR=1;
+            M1.Step_DIR_EN_M_inv.DIR=1;
           }
           if (MINUS_btn.pos_out){
-            M1.DIR=0;
+            M1.Step_DIR_EN_M_inv.DIR=0;
           }
         }
         break;        
@@ -637,10 +637,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M1.EN=1;
+            M1.Step_DIR_EN_M_inv.EN=1;
           }
           if (MINUS_btn.pos_out){
-            M1.EN=0;
+            M1.Step_DIR_EN_M_inv.EN=0;
           }
         }
         break;
@@ -651,10 +651,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M2.Mot_Left=1;
+            M2.Step_DIR_EN_M_inv.Mot_Left=1;
           }
           if (MINUS_btn.pos_out){
-            M2.Mot_Left=0;
+            M2.Step_DIR_EN_M_inv.Mot_Left=0;
           }
         }        
         break;
@@ -665,10 +665,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M2.Step=1;
+            M2.Step_DIR_EN_M_inv.Step=1;
           }
           if (MINUS_btn.pos_out){
-            M2.Step=0;
+            M2.Step_DIR_EN_M_inv.Step=0;
           }
         }            
         break; 
@@ -679,10 +679,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M2.DIR =1;
+            M2.Step_DIR_EN_M_inv.DIR =1;
           }
           if (MINUS_btn.pos_out){
-            M2.DIR =0;
+            M2.Step_DIR_EN_M_inv.DIR =0;
           }
         }            
         break;        
@@ -693,10 +693,10 @@ void StartLedProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M2.EN =1;
+            M2.Step_DIR_EN_M_inv.EN =1;
           }
           if (MINUS_btn.pos_out){
-            M2.EN =0;
+            M2.Step_DIR_EN_M_inv.EN =0;
           }
         }            
         break;        
@@ -950,7 +950,11 @@ void StartLedProcessing(void *argument)
       //=========================screen8==============================================//
     }
     osDelay(50);    
-    
+    if (backlight_on){
+      HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_SET);
+    }else{
+      HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_RESET);
+    }
   }
   /* USER CODE END StartLedProcessing */
 }
@@ -999,48 +1003,101 @@ uint32_t Flash_write(){
   Erase.PageAddress=User_Page_Adress[0];
   Erase.NbPages=1;  //1kBytes
   //  Delay_switching backlight_on tooth_sp Deept_of_cut_mm Deept_of_cut_pulses M1
-  HAL_FLASHEx_Erase(&Erase,&flash_ret);
-  if (flash_ret==0xFFFFFFFF)
-  {
-    //    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[0],(MAX_EU&0x0000FFFF)|((MIN_EU<<16)&0xFFFF0000));
-    //    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[1],(direct&0x000000FF)|((sensor<<8)&0x0000FF00)|((brightness<<16)&0xFFFF0000));
-    //    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[2],(hysteresys&0x000000FF)|((P1<<8)&0x0000FF00)|((I1<<16)&0x00FF0000)|((D1<<24)&0xFF000000));
-    //    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD ,User_Page_Adress[3],(autostart&0x000000FF)|((point_num<<8)&0x0000FF00));
-    //
-    //    
-    
+  if (HAL_FLASHEx_Erase(&Erase, &flash_ret) != HAL_OK) {
     HAL_FLASH_Lock();
+    taskEXIT_CRITICAL();
+    return flash_ret;
   }
-  taskEXIT_CRITICAL();
-  return flash_ret;
+   // Упаковка данных кнопок (9 бит)
+    uint32_t buttons_data = 
+        (UP_btn.pos_normal    << 0) |
+        (DOWN_btn.pos_normal  << 1) |
+        (PLUS_btn.pos_normal  << 2) |
+        (MINUS_btn.pos_normal << 3) |
+        (ENTER_btn.pos_normal << 4) |
+        (SW1_btn.pos_normal   << 5) |
+        (SW2_btn.pos_normal   << 6) |
+        (RCP1_btn.pos_normal  << 7) |
+        (RCP2_btn.pos_normal  << 8);
+
+    // Запись данных
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[0], buttons_data);
+    
+    // M1 данные
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[1], M1.Pulses_per_rev);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[2], (M1.Max_Speed << 16) | M1.out_frequency);
+    uint8_t m1_inv = M1.Step_DIR_EN_M_inv.Step | (M1.Step_DIR_EN_M_inv.DIR << 1) 
+                   | (M1.Step_DIR_EN_M_inv.EN << 2) | (M1.Step_DIR_EN_M_inv.Mot_Left << 3);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[3], 
+                   m1_inv | (M1.Speed_sp << 8) | (M1.ReachCtrlPoint_avalible << 16));
+
+    // M2 данные
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[4], M2.Pulses_per_rev);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[5], (M2.Max_Speed << 16) | M2.out_frequency);
+    uint8_t m2_inv = M2.Step_DIR_EN_M_inv.Step | (M2.Step_DIR_EN_M_inv.DIR << 1) 
+                   | (M2.Step_DIR_EN_M_inv.EN << 2) | (M2.Step_DIR_EN_M_inv.Mot_Left << 3);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[6], 
+                   m2_inv | (M2.Speed_sp << 8) | (M2.ReachCtrlPoint_avalible << 16));
+
+    // Прочие переменные
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[7], 
+                   (Deept_of_cut_mm << 16) | (tooth_sp << 8) | backlight_on);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[8], Delay_switching);
+
+    HAL_FLASH_Lock();
+    taskEXIT_CRITICAL();
+    return 0xFFFFFFFF; // Успешная запись
   
 }
 
-void Flash_read(){
-  //-------------------------Flash---------------------//
-  if (flash_read(User_Page_Adress[0])!=0xFFFFFFFF)
-  {
-    
-    //    MAX_EU=flash_read(User_Page_Adress[0]);
-    //    MIN_EU=flash_read(User_Page_Adress[0])>>16;
-    //    direct=flash_read(User_Page_Adress[1]);
-    //    sensor=flash_read(User_Page_Adress[1])>>8;
-    //    brightness=flash_read(User_Page_Adress[1])>>16;
-    //    hysteresys=flash_read(User_Page_Adress[2]);
-    //    P1=flash_read(User_Page_Adress[2])>>8;  
-    //    I1=flash_read(User_Page_Adress[2])>>16;
-    //    D1=flash_read(User_Page_Adress[2])>>24; 
-    //    autostart=flash_read(User_Page_Adress[3]);
-    //    point_num=flash_read(User_Page_Adress[3])>>8;  
-    //    for (flash_i=0;flash_i<20;flash_i++)
-    //    {
-    //      point[flash_i].Minuts=flash_read(User_Page_Adress[flash_i+4]);
-    //      point[flash_i].Sec=flash_read(User_Page_Adress[flash_i+4])>>8;
-    //      point[flash_i].target=flash_read(User_Page_Adress[flash_i+4])>>16;  
-    //    }
+void Flash_read() {
+  // Чтение данных кнопок
+  uint32_t buttons_data = flash_read(User_Page_Adress[0]);
+  if (buttons_data==0xFF){
+    return; //в первый раз? 
   }
+  UP_btn.pos_normal = (GPIO_PinState)((buttons_data >> 0) & 0x01);
+  DOWN_btn.pos_normal = (GPIO_PinState)((buttons_data >> 1) & 0x01);
+  PLUS_btn.pos_normal = (GPIO_PinState)((buttons_data >> 2) & 0x01);
+  MINUS_btn.pos_normal = (GPIO_PinState)((buttons_data >> 3) & 0x01);
+  ENTER_btn.pos_normal = (GPIO_PinState)((buttons_data >> 4) & 0x01);
+  SW1_btn.pos_normal = (GPIO_PinState)((buttons_data >> 5) & 0x01);
+  SW2_btn.pos_normal = (GPIO_PinState)((buttons_data >> 6) & 0x01);
+  RCP1_btn.pos_normal = (GPIO_PinState)((buttons_data >> 7) & 0x01);
+  RCP2_btn.pos_normal = (GPIO_PinState)((buttons_data >> 8) & 0x01);
   
-  //====================================================//
+  // M1 данные
+  M1.Pulses_per_rev = flash_read(User_Page_Adress[1]);
+  uint32_t m1_speed = flash_read(User_Page_Adress[2]);
+  M1.Max_Speed = (m1_speed >> 16) & 0xFFFF;
+  M1.out_frequency = m1_speed & 0xFFFF;
+  uint32_t m1_set = flash_read(User_Page_Adress[3]);
+  M1.Step_DIR_EN_M_inv.Step = m1_set & 0x01;
+  M1.Step_DIR_EN_M_inv.DIR = (m1_set >> 1) & 0x01;
+  M1.Step_DIR_EN_M_inv.EN = (m1_set >> 2) & 0x01;
+  M1.Step_DIR_EN_M_inv.Mot_Left = (m1_set >> 3) & 0x01;
+  M1.Speed_sp = (m1_set >> 8) & 0xFF;
+  M1.ReachCtrlPoint_avalible = (m1_set >> 16) & 0xFF;
+  
+  // M2 данные (аналогично M1)
+  M2.Pulses_per_rev = flash_read(User_Page_Adress[4]);
+  uint32_t m2_speed = flash_read(User_Page_Adress[5]);
+  M2.Max_Speed = (m2_speed >> 16) & 0xFFFF;
+  M2.out_frequency = m2_speed & 0xFFFF;
+  uint32_t m2_set = flash_read(User_Page_Adress[6]);
+  M2.Step_DIR_EN_M_inv.Step = m2_set & 0x01;
+  M2.Step_DIR_EN_M_inv.DIR = (m2_set >> 1) & 0x01;
+  M2.Step_DIR_EN_M_inv.EN = (m2_set >> 2) & 0x01;
+  M2.Step_DIR_EN_M_inv.Mot_Left = (m2_set >> 3) & 0x01;
+  M2.Speed_sp = (m2_set >> 8) & 0xFF;
+  M2.ReachCtrlPoint_avalible = (m2_set >> 16) & 0xFF;
+  
+  // Прочие переменные
+  uint32_t vars1 = flash_read(User_Page_Adress[7]);
+  backlight_on = vars1 & 0xFF;
+  tooth_sp = (vars1 >> 8) & 0xFF;
+  Deept_of_cut_mm = (vars1 >> 16) & 0xFFFF;
+  Delay_switching = flash_read(User_Page_Adress[8]) & 0xFFFF;
 }
 
 
