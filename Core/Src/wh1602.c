@@ -1,7 +1,7 @@
 
 #include "wh1602.h"
 #include "FreeRTOS.h"
-
+#include "cmsis_os.h"
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
 void PulseLCD()
 {
