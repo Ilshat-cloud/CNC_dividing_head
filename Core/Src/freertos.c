@@ -48,7 +48,7 @@ struct Motor{
   GPIO_PinState ReachCtrlPoint;         //feedback frrom me module
   uint32_t      Pulses_per_rev;         //pulses per revolution
   uint16_t      Max_Speed;              //max speed of motor pulses/sec
-  uint16_t      output_sp;              //how many impulses we have to send
+  int32_t       output_sp;              //how many impulses we have to send
   uint16_t      out_frequency;          //how fast we will send our impulses //todo double check 
   struct        Step_DIR_EN_M_inv Step_DIR_EN_M_inv;      //magic number for inversion of output pins
   uint8_t       Speed_sp;               //0-100% speed SP from settings
@@ -76,7 +76,7 @@ struct Motor M2 = {
   0                  //Speed Setpoint 0-100 reverse  
 };
 
-
+extern TIM_HandleTypeDef htim1;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -91,6 +91,7 @@ FLASH_EraseInitTypeDef Erase;
 #define flash_read(address)  (*(uint32_t*) address)
 void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 void buttin_proc_without_tim(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+void Set_period_and_start_TIM(TIM_HandleTypeDef *htim,uint16_t period);
 
 /* USER CODE END PM */
 
@@ -202,7 +203,7 @@ void MX_FREERTOS_Init(void) {
 void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
-
+  static uint8_t motor_in_use_old=0;
   osDelay(100);
   /* Infinite loop */
   for(;;)
@@ -220,6 +221,20 @@ void StartMainTask(void *argument)
         error=ERROR_SW2;
       }
     }
+    if(motor_in_use_old!=motor_in_use){
+      motor_in_use_old=motor_in_use;
+      if(motor_in_use==1){
+         uint16_t period=M1.Max_Speed/(100-M1.Speed_sp);
+         Set_period_and_start_TIM(&htim1,period); //1000000/period
+      }else if(motor_in_use==2) {
+          uint16_t period2=M2.Max_Speed/(100-M2.Speed_sp);
+         Set_period_and_start_TIM(&htim1,period2); //1000000/period
+      }
+    }
+      
+   
+
+    
   }
   /* USER CODE END StartMainTask */
 }
@@ -855,15 +870,10 @@ void StartLedProcessing(void *argument)
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
             M1.Max_Speed+=PLUS_btn.hold_counter;
-            if (M1.Max_Speed>10000){
-              M1.Max_Speed=10000;
-            }
+
           }
           if (MINUS_btn.pos_out){
             M1.Max_Speed-=PLUS_btn.hold_counter;
-            if (M1.Max_Speed>10000){
-              M1.Max_Speed=0;
-            }
           }
         }
         break;
@@ -878,15 +888,9 @@ void StartLedProcessing(void *argument)
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
             M2.Max_Speed+=PLUS_btn.hold_counter;
-            if (M2.Max_Speed>10000){
-              M2.Max_Speed=10000;
-            }
           }
           if (MINUS_btn.pos_out){
             M2.Max_Speed-=PLUS_btn.hold_counter;
-            if (M2.Max_Speed>10000){
-              M2.Max_Speed=0;
-            }
           }
         }
         break;
@@ -986,7 +990,8 @@ void StartLedProcessing(void *argument)
       PrintByCoordinats(0,3,R);
       sprintf(R,"%03d",tooth_sp);  
       PrintByCoordinats(0,12,R);
-      PrintByCoordinats(1,1,(motor_in_use?"2":"1"));
+      sprintf(R,"%01d",motor_in_use);  
+      PrintByCoordinats(1,1,R);
       PrintByCoordinats(1,6,(M1.ReachCtrlPoint?"1":"0"));
       PrintByCoordinats(1,11,(M2.ReachCtrlPoint?"1":"0"));
       PrintByCoordinats(1,14,(SW1_btn.pos_out?"1":"0"));
@@ -1155,7 +1160,87 @@ void Flash_read() {
   Delay_switching = flash_read(User_Page_Adress[8]) & 0xFFFF;
 }
 
-
-
+void Set_period_and_start_TIM(TIM_HandleTypeDef *htim, uint16_t period){
+    __HAL_TIM_SET_AUTORELOAD(htim, period);                //f==1000000/period 
+    // Сбрасываем счётчик таймера
+    __HAL_TIM_SET_COUNTER(htim, 0);
+    // Если таймер остановлен, его можно перезапустить
+    if (__HAL_TIM_GET_COUNTER(htim) == 0) {
+      HAL_TIM_Base_Start(htim); // Запускаем таймер
+    }
+}
+void Process_morots_from_IRQ(void){
+  static uint8_t toggle=1;
+  if(motor_in_use==1){
+    if(M1.output_sp>0)          //SP--
+    {
+      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
+      HAL_GPIO_WritePin(DIR1_GPIO_Port,DIR1_Pin,M1.Step_DIR_EN_M_inv.DIR?GPIO_PIN_RESET:GPIO_PIN_SET);  
+      if(toggle){
+        toggle=0;
+        HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
+      }else {
+        HAL_GPIO_WritePin(STEP1_GPIO_Port, STEP1_Pin, M1.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+        toggle = 1;
+        M1.output_sp--;
+      }
+    }else if (M1.output_sp==0){
+      motor_in_use=0;
+      toggle=1;
+      HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
+      HAL_TIM_Base_Stop(&htim1);
+    }else{                      //SP++
+      HAL_GPIO_WritePin(DIR1_GPIO_Port,DIR1_Pin,M1.Step_DIR_EN_M_inv.DIR?GPIO_PIN_SET:GPIO_PIN_RESET);  
+      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET);
+      if (toggle) {
+        HAL_GPIO_WritePin(STEP1_GPIO_Port, STEP1_Pin, M1.Step_DIR_EN_M_inv.Step ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        toggle = 0;
+      } else {
+        HAL_GPIO_WritePin(STEP1_GPIO_Port, STEP1_Pin, M1.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+        toggle = 1;
+        M1.output_sp++;
+      }
+    }
+    
+  }else if(motor_in_use==2){
+    if (M2.output_sp > 0) {
+      // Генерация шагов для M2 (прямое направление)
+      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, M2.Step_DIR_EN_M_inv.DIR ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      
+      if (toggle) {
+        HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        toggle = 0;
+      } else {
+        HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+        toggle = 1;
+        M2.output_sp--;
+      }
+    } 
+    else if (M2.output_sp == 0) {
+      // Остановка M2
+      motor_in_use=0;
+      toggle = 1;
+      HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
+      HAL_TIM_Base_Stop(&htim1); // Или другой таймер, если используется отдельный
+    } 
+    else {
+      // Генерация шагов для M2 (обратное направление)
+      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, M2.Step_DIR_EN_M_inv.DIR ? GPIO_PIN_SET : GPIO_PIN_RESET);
+      
+      if (toggle) {
+        HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        toggle = 0;
+      } else {
+        HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+        toggle = 1;
+        M2.output_sp++;
+      }
+    }
+  }
+}
 /* USER CODE END Application */
 

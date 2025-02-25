@@ -138,7 +138,7 @@ typedef enum {
     ERROR_FLASH_R,
     TOTAL_ERRORS
 } Eror_summary;
-
+void Process_morots_from_IRQ(void);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

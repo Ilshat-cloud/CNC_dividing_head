@@ -9,10 +9,6 @@
         <InputEncodingICU>0</InputEncodingICU>
         <OutputEncodingICU>0</OutputEncodingICU>
     </TerminalIO>
-    <TermIOLog>
-        <LoggingEnabled>_ 0</LoggingEnabled>
-        <LogFile>_ ""</LogFile>
-    </TermIOLog>
     <Stack>
         <FillEnabled>0</FillEnabled>
         <OverflowWarningsEnabled>1</OverflowWarningsEnabled>
@@ -24,16 +20,6 @@
         <LimitSize>0</LimitSize>
         <ByteLimit>50</ByteLimit>
     </Stack>
-    <DisassembleMode>
-        <mode>0</mode>
-    </DisassembleMode>
-    <Breakpoints2>
-        <Count>0</Count>
-    </Breakpoints2>
-    <Aliases>
-        <Count>0</Count>
-        <SuppressDialog>0</SuppressDialog>
-    </Aliases>
     <PlDriver>
         <MemConfigValue>C:\Program Files\IAR Systems\Embedded Workbench 9.2\arm\config\debugger\ST\STM32F103C8.ddf</MemConfigValue>
     </PlDriver>
@@ -45,4 +31,18 @@
         <EnableCache>0</EnableCache>
         <EnforceMemoryConfiguration>1</EnforceMemoryConfiguration>
     </ArmDriver>
+    <TermIOLog>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+    </TermIOLog>
+    <DisassembleMode>
+        <mode>0</mode>
+    </DisassembleMode>
+    <Breakpoints2>
+        <Count>0</Count>
+    </Breakpoints2>
+    <Aliases>
+        <Count>0</Count>
+        <SuppressDialog>0</SuppressDialog>
+    </Aliases>
 </settings>

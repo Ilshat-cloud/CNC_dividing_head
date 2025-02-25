@@ -88,7 +88,7 @@ void MX_GPIO_Init(void)
                           |DIR1_Pin|STEP1_Pin|RS_Pin|EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin PAPin
