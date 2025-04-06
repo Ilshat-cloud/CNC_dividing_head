@@ -99,7 +99,8 @@ void Set_period_and_start_TIM(TIM_HandleTypeDef *htim,uint16_t period);
 /* USER CODE BEGIN Variables */  
 extern IWDG_HandleTypeDef hiwdg;
 uint8_t flag=0, backlight_on=1,motor_in_use=0,startyem=0,error=0;  //screenchoise flag
-uint8_t tooth_sp=0, current_tooth=0;
+uint8_t tooth_sp=0, current_tooth=0,screen_cursor=0, screen_enter_set=0;
+uint8_t screen_substrate=1;
 int16_t Deept_of_cut_mm=0; 
 uint16_t Delay_switching=0;
 uint32_t Pulses_for_tooth=0;
@@ -262,56 +263,17 @@ void StartButtonProcessing(void *argument)
     buttin_proc_without_tim(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
     buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
     buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
-    osDelay(20);
-  }
-  /* USER CODE END StartButtonProcessing */
-}
-
-/* USER CODE BEGIN Header_StartLedProcessing */
-/**
-* @brief Function implementing the LEDProcessing thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartLedProcessing */
-void StartLedProcessing(void *argument)
-{
-  /* USER CODE BEGIN StartLedProcessing */
-  /* Infinite loop */
-  char R[16];
-  InitializeLCD();
-  osDelay(500);
-  uint8_t screen_substrate=1, screen_cursor=0, screen_enter_set=0;
-  
-  /* Infinite loop */
-  for(;;)
-  {
+    osDelay(100);
+    
+    //-------------------navigation--------------------//
     switch(flag){
       //------------------------------screen0--------------------------------------//
     case SCREEN_MAIN:  //default screen
-      if(flag!=screen_substrate){
-        screen_substrate=flag;
-        Cursor(0,0);
-        PrintStr("SP:XXXt   M2:00%");
-        Cursor(1,0);
-        PrintStr("P:+1234mm  Start");
-      }
-      sprintf(R,"%03d",tooth_sp);  
-      PrintByCoordinats(0,3,R);
-      
-      sprintf(R,"%02d",M2.Speed_sp);  
-      PrintByCoordinats(0,13,R);
-      
-      sprintf(R,"%05d",Deept_of_cut_mm);
-      PrintByCoordinats(1,2,R);
-      //todo Deept_of_cut_pulses=Deept_of_cut_mm*M2.pulses per mm
       switch(screen_cursor){
       case 0:
-        Cursor(0,0);          //default state for each screen
         screen_enter_set=0;
         break;
       case 1:
-        Cursor(0,3);          //set setpoint 1-255 plus and minus
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
         }
@@ -323,9 +285,9 @@ void StartLedProcessing(void *argument)
             tooth_sp--;
           }
         }
+        
         break;
       case 2:
-        Cursor(0,13);          //enter to increase or decrease M2 speed SP 0-99%
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
         }
@@ -343,9 +305,9 @@ void StartLedProcessing(void *argument)
             }
           }
         }
+        
         break;
       case 3:
-        Cursor(1,2);          //enter to increase or decrease deept of cut
         if (ENTER_btn.pos_out){
           screen_enter_set=1;
         }
@@ -357,15 +319,15 @@ void StartLedProcessing(void *argument)
             }
           }
           if (MINUS_btn.pos_out){
-            Deept_of_cut_mm-=PLUS_btn.hold_counter;
+            Deept_of_cut_mm-=MINUS_btn.hold_counter;
             if (Deept_of_cut_mm <= -1000) {
               Deept_of_cut_mm = -999;
             }
           }
         }
+        
         break;
       case 4:
-        Cursor(0,11);          //enter to start or stop process
         if (ENTER_btn.pos_out){
           if (tooth_sp){
             Pulses_for_tooth=M1.Pulses_per_rev/tooth_sp;
@@ -377,21 +339,20 @@ void StartLedProcessing(void *argument)
           startyem=1;
           break;  //this break will set us to next scan;
         }
+        
         break;
       }
       
       if (screen_enter_set){
-        if (UP_btn.pos_out){
+        if(UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
         }
       }else{
         if (PLUS_btn.pos_out){
-          
           (screen_cursor<4)?screen_cursor++:0;
         }
         if (MINUS_btn.pos_out){
-          
           (screen_cursor>0)?screen_cursor--:0;
         }
         if (DOWN_btn.pos_out){
@@ -399,48 +360,30 @@ void StartLedProcessing(void *argument)
           screen_cursor=0;
         }
       }
-      
-      break; 
-      //=========================screen0==============================================//
-      
-      //------------------------------screen1--------------------------------------//
+      break;
+  //------------------------------screen1--------------------------------------//
     case SCREEN_MAIN2:  //settings indication screen
-      if(flag!=screen_substrate){
-        screen_substrate=flag;
-        Cursor(0,0);
-        PrintStr("RCP1:X Set Sw1:X");
-        Cursor(1,0);
-        PrintStr("RCP2:X Bl1 Sw2:X");
-      }
-      PrintByCoordinats(0,5,(M1.ReachCtrlPoint?"0":"1")); 
-      PrintByCoordinats(0,15,(SW1_btn.pos_out?"0":"1")); 
-      PrintByCoordinats(1,5,(M2.ReachCtrlPoint?"0":"1"));      
-      PrintByCoordinats(1,9,(backlight_on?"0":"1"));
-      PrintByCoordinats(1,15,(SW1_btn.pos_out?"0":"1"));
-      
-      
-      
-      if(screen_cursor==1){
-        Cursor(0,7);          //enter to settings menu go to next screen
+       if(screen_cursor==1){
         if (ENTER_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
           flag=SCREEN_SETTINGS1;
           break;  //this break will set us to next scan;
         } 
-      }else if (screen_cursor==2){
-        Cursor(1,9);
-        if(screen_enter_set){
-          if (PLUS_btn.pos_out){
-            backlight_on=1;  //todo flash save
-          }
-          if (MINUS_btn.pos_out){
-            backlight_on=0;
-          }
+       }else if (screen_cursor==2){
+         if (ENTER_btn.pos_out){
+           screen_enter_set=1;
+         }
+         if(screen_enter_set){
+           if (PLUS_btn.pos_out){
+             backlight_on=1;  //todo flash save
+           }
+           if (MINUS_btn.pos_out){
+             backlight_on=0;
+           }
         }
-      }else{
-        Cursor(0,0);
       }
+      
       if (screen_enter_set){
         if (UP_btn.pos_out){
           screen_enter_set=0;
@@ -461,6 +404,111 @@ void StartLedProcessing(void *argument)
           screen_cursor=0;
         }
       }
+      
+       break;
+    } 
+    
+    
+  }
+  /* USER CODE END StartButtonProcessing */
+}
+
+/* USER CODE BEGIN Header_StartLedProcessing */
+/**
+* @brief Function implementing the LEDProcessing thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLedProcessing */
+void StartLedProcessing(void *argument)
+{
+  /* USER CODE BEGIN StartLedProcessing */
+  /* Infinite loop */
+  char R[17];
+  InitializeLCD();
+  osDelay(500);
+
+  uint8_t toggle=0;
+  /* Infinite loop */
+  for(;;)
+  {
+    toggle++;
+    if (screen_enter_set){
+      toggle++;}
+    switch(flag){
+      //------------------------------screen0--------------------------------------//
+    case SCREEN_MAIN:  //default screen
+      
+      //todo Deept_of_cut_pulses=Deept_of_cut_mm*M2.pulses per mm
+      
+      if (toggle&0x02){
+        sprintf(R,"SP:%03d t  M2:%03d",tooth_sp,M2.Speed_sp); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"P:%05dmm  Start",Deept_of_cut_mm); 
+        PrintByCoordinats(1,0,R);
+      }else{
+        
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"SP:%03d t  M2:%03d",tooth_sp,M2.Speed_sp); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"P:%05dmm  Start",Deept_of_cut_mm); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"SP:    t  M2:%03d",M2.Speed_sp); 
+          PrintByCoordinats(0,0,R);
+          break;
+        case 2:
+          sprintf(R,"SP:%03d t  M2:   ",tooth_sp); 
+          PrintByCoordinats(0,0,R);
+          break;
+        case 3:
+          sprintf(R,"P:     mm  Start"); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 4:
+          sprintf(R,"P:%05dmm       ",Deept_of_cut_mm); 
+          PrintByCoordinats(1,0,R);
+          break;
+        }
+        
+       }    
+       break; 
+      //=========================screen0==============================================//
+      
+      //------------------------------screen1--------------------------------------//
+    case SCREEN_MAIN2:  //settings indication screen
+
+
+      
+      if (toggle&0x02){
+        sprintf(R,"RCP1:%01d Set Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW1_btn.pos_out); 
+        PrintByCoordinats(1,0,R);
+      }else{
+        
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"RCP1:%01d Set Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW1_btn.pos_out); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"RCP1:%01d     Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
+          PrintByCoordinats(0,0,R);
+          break;
+        case 2:
+          sprintf(R,"RCP2:%01d Bl  Sw2:%01d",M2.ReachCtrlPoint,SW1_btn.pos_out); 
+          PrintByCoordinats(1,0,R);
+          break;
+        }
+        
+      }         
+      
+
       break; 
             //=========================screen1==============================================//
       
@@ -1001,7 +1049,7 @@ void StartLedProcessing(void *argument)
       break;
       //=========================screen8==============================================//
     }
-    osDelay(50);    
+    osDelay(250);    
     if (backlight_on){
       HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_SET);
     }else{
