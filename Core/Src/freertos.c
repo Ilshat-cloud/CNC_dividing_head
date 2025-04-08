@@ -106,14 +106,14 @@ uint16_t Delay_switching=0;
 uint32_t Pulses_for_tooth=0;
 int32_t Pulses_for_deptofcut=0; //may be in bouth directions
 static struct button_without_fix  UP_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  RCP1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
-                                  RCP2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0};
+DOWN_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+PLUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+MINUS_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+ENTER_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+SW1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+SW2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+RCP1_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0},
+RCP2_btn={GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_RESET,GPIO_PIN_SET,0};
 /* USER CODE END Variables */
 /* Definitions for mainTask */
 osThreadId_t mainTaskHandle;
@@ -210,7 +210,7 @@ void StartMainTask(void *argument)
   for(;;)
   {
     HAL_IWDG_Refresh(&hiwdg);
-
+    
     osDelay(10);
     if(flag==SCREEN_STARTUEM){
       if(SW1_btn.pos_out)
@@ -225,16 +225,16 @@ void StartMainTask(void *argument)
     if(motor_in_use_old!=motor_in_use){
       motor_in_use_old=motor_in_use;
       if(motor_in_use==1){
-         uint16_t period=M1.Max_Speed/(100-M1.Speed_sp);
-         Set_period_and_start_TIM(&htim1,period); //1000000/period
+        uint16_t period=M1.Max_Speed/(100-M1.Speed_sp);
+        Set_period_and_start_TIM(&htim1,period); //1000000/period
       }else if(motor_in_use==2) {
-          uint16_t period2=M2.Max_Speed/(100-M2.Speed_sp);
-         Set_period_and_start_TIM(&htim1,period2); //1000000/period
+        uint16_t period2=M2.Max_Speed/(100-M2.Speed_sp);
+        Set_period_and_start_TIM(&htim1,period2); //1000000/period
       }
     }
-      
-   
-
+    
+    
+    
     
   }
   /* USER CODE END StartMainTask */
@@ -263,7 +263,7 @@ void StartButtonProcessing(void *argument)
     buttin_proc_without_tim(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
     buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
     buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
-    osDelay(100);
+    osDelay(75);
     
     //-------------------navigation--------------------//
     switch(flag){
@@ -361,26 +361,26 @@ void StartButtonProcessing(void *argument)
         }
       }
       break;
-  //------------------------------screen1--------------------------------------//
+      //------------------------------screen1--------------------------------------//
     case SCREEN_MAIN2:  //settings indication screen
-       if(screen_cursor==1){
+      if(screen_cursor==1){
         if (ENTER_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
           flag=SCREEN_SETTINGS1;
           break;  //this break will set us to next scan;
         } 
-       }else if (screen_cursor==2){
-         if (ENTER_btn.pos_out){
-           screen_enter_set=1;
-         }
-         if(screen_enter_set){
-           if (PLUS_btn.pos_out){
-             backlight_on=1;  //todo flash save
-           }
-           if (MINUS_btn.pos_out){
-             backlight_on=0;
-           }
+      }else if (screen_cursor==2){
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            backlight_on=1;  //todo flash save
+          }
+          if (MINUS_btn.pos_out){
+            backlight_on=0;
+          }
         }
       }
       
@@ -404,256 +404,256 @@ void StartButtonProcessing(void *argument)
           screen_cursor=0;
         }
       }
-       break;
+      break;
       //------------------------------screen2--------------------------------------//
-      case SCREEN_SETTINGS1:  //settings reach contrl piont check and endswitches     
-       switch(screen_cursor){
-        case 0:
-          screen_enter_set=0;
-          break;
-        case 1:     
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              SW1_btn.pos_normal=GPIO_PIN_SET;
-            }
-            if (MINUS_btn.pos_out){
-              SW1_btn.pos_normal=GPIO_PIN_RESET;
-            }
-          }
-          break;
-         case 2:         
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              Delay_switching+=PLUS_btn.hold_counter;
-              if (Delay_switching>5000){
-                Delay_switching=5000;
-              }
-            }
-            if (MINUS_btn.pos_out){
-              Delay_switching-=PLUS_btn.hold_counter;
-              if (Delay_switching>5000){
-                Delay_switching=0;
-              }
-            }
-          }
-          break;
-        case 3:         
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              SW2_btn.pos_normal=GPIO_PIN_SET;
-            }
-            if (MINUS_btn.pos_out){
-              SW2_btn.pos_normal=GPIO_PIN_RESET;
-            }
-          }
-          break;
-        case 4:        
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.ReachCtrlPoint_avalible++;
-              if (M1.ReachCtrlPoint_avalible>2){
-                M1.ReachCtrlPoint_avalible=2;
-              }
-            }
-            if (MINUS_btn.pos_out){
-              M1.ReachCtrlPoint_avalible--;
-              if (M1.ReachCtrlPoint_avalible>2){
-                M1.ReachCtrlPoint_avalible=0;
-              }
-            }
-          }
-          break;  
-        case 5:       
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.ReachCtrlPoint_avalible++;
-              if (M2.ReachCtrlPoint_avalible>2){
-                M2.ReachCtrlPoint_avalible=2;
-              }
-            }
-            if (MINUS_btn.pos_out){
-              M2.ReachCtrlPoint_avalible--;
-              if (M2.ReachCtrlPoint_avalible>2){
-                M2.ReachCtrlPoint_avalible=0;
-              }
-            }
-          }
-          break;
+    case SCREEN_SETTINGS1:  //settings reach contrl piont check and endswitches     
+      switch(screen_cursor){
+      case 0:
+        screen_enter_set=0;
+        break;
+      case 1:     
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
         }
-        if (screen_enter_set){
-          if (UP_btn.pos_out){
-            screen_enter_set=0;
-            screen_cursor=0;
-          }
-        }else{
+        if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            
-            (screen_cursor<4)?screen_cursor++:0;
+            SW1_btn.pos_normal=GPIO_PIN_SET;
           }
           if (MINUS_btn.pos_out){
-            
-            (screen_cursor>0)?screen_cursor--:0;
+            SW1_btn.pos_normal=GPIO_PIN_RESET;
           }
-          if (DOWN_btn.pos_out){
-            flag=SCREEN_SETTINGS2;  //go to next menu  
-            screen_cursor=0;
+        }
+        break;
+      case 2:         
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            Delay_switching+=PLUS_btn.hold_counter;
+            if (Delay_switching>5000){
+              Delay_switching=5000;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            Delay_switching-=PLUS_btn.hold_counter;
+            if (Delay_switching>5000){
+              Delay_switching=0;
+            }
+          }
+        }
+        break;
+      case 3:         
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            SW2_btn.pos_normal=GPIO_PIN_SET;
+          }
+          if (MINUS_btn.pos_out){
+            SW2_btn.pos_normal=GPIO_PIN_RESET;
+          }
+        }
+        break;
+      case 4:        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M1.ReachCtrlPoint_avalible++;
+            if (M1.ReachCtrlPoint_avalible>2){
+              M1.ReachCtrlPoint_avalible=2;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            M1.ReachCtrlPoint_avalible--;
+            if (M1.ReachCtrlPoint_avalible>2){
+              M1.ReachCtrlPoint_avalible=0;
+            }
+          }
+        }
+        break;  
+      case 5:       
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.ReachCtrlPoint_avalible++;
+            if (M2.ReachCtrlPoint_avalible>2){
+              M2.ReachCtrlPoint_avalible=2;
+            }
+          }
+          if (MINUS_btn.pos_out){
+            M2.ReachCtrlPoint_avalible--;
+            if (M2.ReachCtrlPoint_avalible>2){
+              M2.ReachCtrlPoint_avalible=0;
+            }
+          }
+        }
+        break;
+      }
+      if (screen_enter_set){
+        if (UP_btn.pos_out){
+          screen_enter_set=0;
+          screen_cursor=0;
+        }
+      }else{
+        if (PLUS_btn.pos_out){
+          
+          (screen_cursor<5)?screen_cursor++:0;
+        }
+        if (MINUS_btn.pos_out){
+          
+          (screen_cursor>0)?screen_cursor--:0;
+        }
+        if (DOWN_btn.pos_out){
+          flag=SCREEN_SETTINGS2;  //go to next menu  
+          screen_cursor=0;
+        }
+      }
+      break;        
+      //=========================screen2==============================================//
+      
+      //------------------------------screen3--------------------------------------//
+    case SCREEN_SETTINGS2:   //motor out signal inversions
+      switch(screen_cursor){
+      case 0:
+        screen_enter_set=0;
+        break;
+      case 1:       
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.Mot_Left=1;
+          }
+          if (MINUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.Mot_Left=0;
+          }
+        }
+        break;
+      case 2:          
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.Step=1;
+          }
+          if (MINUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.Step=0;
+          }
+        }
+        break;
+      case 3:       
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.DIR=1;
+          }
+          if (MINUS_btn.pos_out){
+            M1.Step_DIR_EN_M_inv.DIR=0;
           }
         }
         break;        
-        //=========================screen2==============================================//
-
-      //------------------------------screen3--------------------------------------//
-      case SCREEN_SETTINGS2:   //motor out signal inversions
-      switch(screen_cursor){
-        case 0:
-          screen_enter_set=0;
-          break;
-        case 1:       
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.Mot_Left=1;
-            }
-            if (MINUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.Mot_Left=0;
-            }
-          }
-          break;
-        case 2:          
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.Step=1;
-            }
-            if (MINUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.Step=0;
-            }
-          }
-          break;
-        case 3:       
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.DIR=1;
-            }
-            if (MINUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.DIR=0;
-            }
-          }
-          break;        
-        case 4:        
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.EN=1;
-            }
-            if (MINUS_btn.pos_out){
-              M1.Step_DIR_EN_M_inv.EN=0;
-            }
-          }
-          break;
-        case 5:         
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.Mot_Left=1;
-            }
-            if (MINUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.Mot_Left=0;
-            }
-          }        
-          break;
-        case 6:         
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.Step=1;
-            }
-            if (MINUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.Step=0;
-            }
-          }            
-          break; 
-        case 7:     
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.DIR =1;
-            }
-            if (MINUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.DIR =0;
-            }
-          }            
-          break;        
-        case 8:       
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.EN =1;
-            }
-            if (MINUS_btn.pos_out){
-              M2.Step_DIR_EN_M_inv.EN =0;
-            }
-          }            
-          break;        
+      case 4:        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
         }
-        if (screen_enter_set){
-          if (UP_btn.pos_out){
-            screen_enter_set=0;
-            screen_cursor=0;
-          }
-        }else{
+        if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            
-            (screen_cursor<7)?screen_cursor++:0;
+            M1.Step_DIR_EN_M_inv.EN=1;
           }
           if (MINUS_btn.pos_out){
-            
-            (screen_cursor>0)?screen_cursor--:0;
-          }
-          if (DOWN_btn.pos_out){
-            flag=SCREEN_SETTINGS3;  //go to next menu  
-            screen_cursor=0;
+            M1.Step_DIR_EN_M_inv.EN=0;
           }
         }
+        break;
+      case 5:         
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.Mot_Left=1;
+          }
+          if (MINUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.Mot_Left=0;
+          }
+        }        
+        break;
+      case 6:         
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.Step=1;
+          }
+          if (MINUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.Step=0;
+          }
+        }            
         break; 
-        
-        //=========================screen3==============================================//
-
-        //------------------------------screen4--------------------------------------//
+      case 7:     
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.DIR =1;
+          }
+          if (MINUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.DIR =0;
+          }
+        }            
+        break;        
+      case 8:       
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.EN =1;
+          }
+          if (MINUS_btn.pos_out){
+            M2.Step_DIR_EN_M_inv.EN =0;
+          }
+        }            
+        break;        
+      }
+      if (screen_enter_set){
+        if (UP_btn.pos_out){
+          screen_enter_set=0;
+          screen_cursor=0;
+        }
+      }else{
+        if (PLUS_btn.pos_out){
+          
+          (screen_cursor<8)?screen_cursor++:0;
+        }
+        if (MINUS_btn.pos_out){
+          
+          (screen_cursor>0)?screen_cursor--:0;
+        }
+        if (DOWN_btn.pos_out){
+          flag=SCREEN_SETTINGS3;  //go to next menu  
+          screen_cursor=0;
+        }
+      }
+      break; 
+      
+      //=========================screen3==============================================//
+      
+      //------------------------------screen4--------------------------------------//
     case SCREEN_SETTINGS3:   //motor puleses per revolution
-    switch(screen_cursor){
+      switch(screen_cursor){
       case 0:
         screen_enter_set=0;
         break;
@@ -669,7 +669,7 @@ void StartButtonProcessing(void *argument)
             }
           }
           if (MINUS_btn.pos_out){
-            M1.Pulses_per_rev-=PLUS_btn.hold_counter;
+            M1.Pulses_per_rev-=MINUS_btn.hold_counter;
             if (M1.Pulses_per_rev>50000){
               M1.Pulses_per_rev=0;
             }
@@ -690,7 +690,7 @@ void StartButtonProcessing(void *argument)
             }
           }
           if (MINUS_btn.pos_out){
-            M2.Pulses_per_rev-=PLUS_btn.hold_counter;
+            M2.Pulses_per_rev-=MINUS_btn.hold_counter;
             if (M2.Pulses_per_rev>20000){
               M2.Pulses_per_rev=0;
             }
@@ -722,90 +722,90 @@ void StartButtonProcessing(void *argument)
       
       break; 
       //=========================screen4==============================================//
-
+      
       //------------------------------screen5--------------------------------------//
-      case SCREEN_SETTINGS4:   //motor max speed, may be in future here will be autodjust according to RCP pin
+    case SCREEN_SETTINGS4:   //motor max speed, may be in future here will be autodjust according to RCP pin
       switch(screen_cursor){
-        case 0:
-          screen_enter_set=0;
-          break;
-        case 1:        
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M1.Max_Speed+=PLUS_btn.hold_counter;
-  
-            }
-            if (MINUS_btn.pos_out){
-              M1.Max_Speed-=PLUS_btn.hold_counter;
-            }
-          }
-          break;
-        case 2:    
-
-          break;      
-        case 3:   
-        
-          if (ENTER_btn.pos_out){
-            screen_enter_set=1;
-          }
-          if(screen_enter_set){
-            if (PLUS_btn.pos_out){
-              M2.Max_Speed+=PLUS_btn.hold_counter;
-            }
-            if (MINUS_btn.pos_out){
-              M2.Max_Speed-=PLUS_btn.hold_counter;
-            }
-          }
-          break;
-        case 4:     
- 
-          break;
+      case 0:
+        screen_enter_set=0;
+        break;
+      case 1:        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
         }
-        
-        if (screen_enter_set){
-          if (UP_btn.pos_out){
-            screen_enter_set=0;
-            screen_cursor=0;
-          }
-        }else{
+        if(screen_enter_set){
           if (PLUS_btn.pos_out){
+            M1.Max_Speed+=PLUS_btn.hold_counter;
             
-            (screen_cursor<4)?screen_cursor++:0;
           }
           if (MINUS_btn.pos_out){
-            
-            (screen_cursor>0)?screen_cursor--:0;
-          }
-          if (DOWN_btn.pos_out){
-            flag=SCREEN_MAIN;  //go to next menu  
-            screen_cursor=0;
+            M1.Max_Speed-=MINUS_btn.hold_counter;
           }
         }
-        break; 
-        //=========================screen5==============================================//    
-        
-        //------------------------------screen6--------------------------------------//
-        case SCREEN_SUCSESS:  //screen sucsess
-          osDelay(delay_for_sucsess_screen);
-          flag=SCREEN_MAIN;
-        break; 
-
-              //------------------------------screen7--------------------------------------//
-        case SCREEN_ERROR:
-          if (UP_btn.pos_out){
-            error=ERROR_NONE;
-            flag=SCREEN_MAIN;
-          }
-        break;    
-        //=========================screen7==============================================//
-              //------------------------------screen8--------------------------------------//
-        case SCREEN_STARTUEM:  //in work
-
         break;
-        //=========================screen8==============================================//
+      case 2:    
+        
+        break;      
+      case 3:   
+        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          if (PLUS_btn.pos_out){
+            M2.Max_Speed+=PLUS_btn.hold_counter;
+          }
+          if (MINUS_btn.pos_out){
+            M2.Max_Speed-=MINUS_btn.hold_counter;
+          }
+        }
+        break;
+      case 4:     
+        
+        break;
+      }
+      
+      if (screen_enter_set){
+        if (UP_btn.pos_out){
+          screen_enter_set=0;
+          screen_cursor=0;
+        }
+      }else{
+        if (PLUS_btn.pos_out){
+          
+          (screen_cursor<4)?screen_cursor++:0;
+        }
+        if (MINUS_btn.pos_out){
+          
+          (screen_cursor>0)?screen_cursor--:0;
+        }
+        if (DOWN_btn.pos_out){
+          flag=SCREEN_MAIN;  //go to next menu  
+          screen_cursor=0;
+        }
+      }
+      break; 
+      //=========================screen5==============================================//    
+      
+      //------------------------------screen6--------------------------------------//
+    case SCREEN_SUCSESS:  //screen sucsess
+      osDelay(delay_for_sucsess_screen);
+      flag=SCREEN_MAIN;
+      break; 
+      
+      //------------------------------screen7--------------------------------------//
+    case SCREEN_ERROR:
+      if (UP_btn.pos_out){
+        error=ERROR_NONE;
+        flag=SCREEN_MAIN;
+      }
+      break;    
+      //=========================screen7==============================================//
+      //------------------------------screen8--------------------------------------//
+    case SCREEN_STARTUEM:  //in work
+      
+      break;
+      //=========================screen8==============================================//
     }    
   }
   /* USER CODE END StartButtonProcessing */
@@ -825,7 +825,7 @@ void StartLedProcessing(void *argument)
   char R[17];
   InitializeLCD();
   osDelay(500);
-
+  
   uint8_t toggle=0;
   /* Infinite loop */
   for(;;)
@@ -871,14 +871,14 @@ void StartLedProcessing(void *argument)
           break;
         }
         
-       }    
-       break; 
+      }    
+      break; 
       //=========================screen0==============================================//
       
       //------------------------------screen1--------------------------------------//
     case SCREEN_MAIN2:  //settings indication screen
-
-
+      
+      
       
       if (toggle&0x02){
         sprintf(R,"RCP1:%01d Set Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
@@ -906,267 +906,267 @@ void StartLedProcessing(void *argument)
         
       }         
       
-
+      
       break; 
-            //=========================screen1==============================================//
+      //=========================screen1==============================================//
       
       //------------------------------screen2--------------------------------------//
     case SCREEN_SETTINGS1:  //settings reach contrl piont check and endswitches
-    if (toggle&0x02){
-      sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-    }else{
-      switch(screen_cursor){
-      case 0:
-      sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-      break;
-      case 1:
-      sprintf(R,"Sw1_i:  Del:%04d",Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-        break;
-       case 2:
-       sprintf(R,"Sw1_i:%01d Del:    ",SW1_btn.pos_normal); 
-       PrintByCoordinats(0,0,R);
-       sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
-       PrintByCoordinats(1,0,R);
-        break;
-      case 3:
-      sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i  F1:%01d F2:%01d",M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 4:
-      sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i%01d F1:  F2:%01d",SW2_btn.pos_normal,M2.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-        break;  
-      case 5:
-      sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"Sw2_i%01d F1:%01d F2: ",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible); 
-      PrintByCoordinats(1,0,R);
-        break;
+      if (toggle&0x02){
+        sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
+        PrintByCoordinats(1,0,R);
+      }else{
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"Sw1_i:  Del:%04d",Delay_switching); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 2:
+          sprintf(R,"Sw1_i:%01d Del:    ",SW1_btn.pos_normal); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i%01d F1:%01d F2:%01d",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 3:
+          sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i  F1:%01d F2:%01d",M1.ReachCtrlPoint_avalible,M2.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 4:
+          sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i%01d F1:  F2:%01d",SW2_btn.pos_normal,M2.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;  
+        case 5:
+          sprintf(R,"Sw1_i:%01d Del:%04d",SW1_btn.pos_normal,Delay_switching); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"Sw2_i%01d F1:%01d F2: ",SW2_btn.pos_normal,M1.ReachCtrlPoint_avalible); 
+          PrintByCoordinats(1,0,R);
+          break;
+        }
       }
-    }
       break;        
       //=========================screen2==============================================//
-    
+      
       //------------------------------screen3--------------------------------------//
     case SCREEN_SETTINGS2:   //motor out signal inversions
-
-    if (toggle&0x02){
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-    }else{
-      switch(screen_cursor){
-      case 0:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 1:
-      sprintf(R,"M1:  StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 2:
-      sprintf(R,"M1:%01s StDirEn: %01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 3:
-      sprintf(R,"M1:%01s StDirEn:%01d %01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-        break;        
-      case 4:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d ",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 5:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:  StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);     
-        break;
-      case 6:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn: %01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);            
-        break; 
-      case 7:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d %01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(1,0,R);        
-        break;        
-      case 8:
-      sprintf(R,"M1:%01s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2:%01s StDirEn:%01d%01d ",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR); 
-      PrintByCoordinats(1,0,R);          
-        break;        
+      
+      if (toggle&0x02){
+        sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+        PrintByCoordinats(1,0,R);
+      }else{
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"M1:  StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 2:
+          sprintf(R,"M1:%s StDirEn: %01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 3:
+          sprintf(R,"M1:%s StDirEn:%01d %01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);
+          break;        
+        case 4:
+          sprintf(R,"M1:%s StDirEn:%01d%01d ",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 5:
+          sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:  StDirEn:%01d%01d%01d",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);     
+          break;
+        case 6:
+          sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn: %01d%01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.DIR,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);            
+          break; 
+        case 7:
+          sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d %01d",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(1,0,R);        
+          break;        
+        case 8:
+          sprintf(R,"M1:%s StDirEn:%01d%01d%01d",M1.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M1.Step_DIR_EN_M_inv.Step,M1.Step_DIR_EN_M_inv.DIR,M1.Step_DIR_EN_M_inv.EN); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2:%s StDirEn:%01d%01d ",M2.Step_DIR_EN_M_inv.Mot_Left?"L":"R",M2.Step_DIR_EN_M_inv.Step,M2.Step_DIR_EN_M_inv.DIR); 
+          PrintByCoordinats(1,0,R);          
+          break;        
+        }
       }
-    }
       break; 
       
       //=========================screen3==============================================//
       
       //------------------------------screen4--------------------------------------//
     case SCREEN_SETTINGS3:   //motor puleses per revolution
-    if (toggle&0x02){
-      sprintf(R,"M1_P:%05d   Test",M1.Pulses_per_rev); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:%05d   Test",M2.Pulses_per_rev); 
-      PrintByCoordinats(1,0,R);
-    }else{    
-      switch(screen_cursor){
-      case 0:
-      sprintf(R,"M1_P:%05d   Test",M1.Pulses_per_rev); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:%05d   Test",M2.Pulses_per_rev); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 1:
-      sprintf(R,"M1_P:        Test"); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:%05d   Test",M2.Pulses_per_rev); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 2:    
-      sprintf(R,"M1_P:%05d       ",M1.Pulses_per_rev); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:%05d   Test",M2.Pulses_per_rev); 
-      PrintByCoordinats(1,0,R);
-        break;      
-      case 3:   
-      sprintf(R,"M1_P:%05d   Test",M1.Pulses_per_rev); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:        Test"); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 4:     
-      sprintf(R,"M1_P:%05d   Test",M1.Pulses_per_rev); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_P:%05d       ",M2.Pulses_per_rev); 
-      PrintByCoordinats(1,0,R);
-        break;
-      }        
-    }
+      if (toggle&0x02){
+        sprintf(R,"M1_P:%05d  Test",M1.Pulses_per_rev); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"M2_P:%05d  Test",M2.Pulses_per_rev); 
+        PrintByCoordinats(1,0,R);
+      }else{    
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"M1_P:%05d  Test",M1.Pulses_per_rev); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_P:%05d  Test",M2.Pulses_per_rev); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"M1_P:       Test"); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_P:%05d  Test",M2.Pulses_per_rev); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 2:    
+          sprintf(R,"M1_P:%05d      ",M1.Pulses_per_rev); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_P:%05d  Test",M2.Pulses_per_rev); 
+          PrintByCoordinats(1,0,R);
+          break;      
+        case 3:   
+          sprintf(R,"M1_P:%05d  Test",M1.Pulses_per_rev); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_P:       Test"); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 4:     
+          sprintf(R,"M1_P:%05d  Test",M1.Pulses_per_rev); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_P:%05d      ",M2.Pulses_per_rev); 
+          PrintByCoordinats(1,0,R);
+          break;
+        }        
+      }
       break; 
       //=========================screen4==============================================//
       
       //------------------------------screen5--------------------------------------//
     case SCREEN_SETTINGS4:   //motor max speed, may be in future here will be autodjust according to RCP pin
-    if (toggle&0x02){
-      sprintf(R,"M1_M:%05d   Test",M1.Max_Speed); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:%05d   Test",M2.Max_Speed); 
-      PrintByCoordinats(1,0,R);
-    }else{          
-      switch(screen_cursor){
-      case 0:
-      sprintf(R,"M1_M:%05d   Test",M1.Max_Speed); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:%05d   Test",M2.Max_Speed); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 1:
-      sprintf(R,"M1_M:        Test"); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:%05d   Test",M2.Max_Speed); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 2:    
-      sprintf(R,"M1_M:%05d       ",M1.Max_Speed); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:%05d   Test",M2.Max_Speed); 
-      PrintByCoordinats(1,0,R);
-        break;      
-      case 3:   
-      sprintf(R,"M1_M:%05d   Test",M1.Max_Speed); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:        Test"); 
-      PrintByCoordinats(1,0,R);
-        break;
-      case 4:     
-      sprintf(R,"M1_M:%05d   Test",M1.Max_Speed); 
-      PrintByCoordinats(0,0,R);
-      sprintf(R,"M2_M:%05d       ",M2.Max_Speed); 
-      PrintByCoordinats(1,0,R);
-        break;
+      if (toggle&0x02){
+        sprintf(R,"M1_M:%05d  Test",M1.Max_Speed); 
+        PrintByCoordinats(0,0,R);
+        sprintf(R,"M2_M:%05d  Test",M2.Max_Speed); 
+        PrintByCoordinats(1,0,R);
+      }else{          
+        switch(screen_cursor){
+        case 0:
+          sprintf(R,"M1_M:%05d  Test",M1.Max_Speed); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_M:%05d  Test",M2.Max_Speed); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 1:
+          sprintf(R,"M1_M:       Test"); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_M:%05d  Test",M2.Max_Speed); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 2:    
+          sprintf(R,"M1_M:%05d      ",M1.Max_Speed); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_M:%05d  Test",M2.Max_Speed); 
+          PrintByCoordinats(1,0,R);
+          break;      
+        case 3:   
+          sprintf(R,"M1_M:%05d  Test",M1.Max_Speed); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_M:       Test"); 
+          PrintByCoordinats(1,0,R);
+          break;
+        case 4:     
+          sprintf(R,"M1_M:%05d  Test",M1.Max_Speed); 
+          PrintByCoordinats(0,0,R);
+          sprintf(R,"M2_M:%05d      ",M2.Max_Speed); 
+          PrintByCoordinats(1,0,R);
+          break;
+        }
       }
-    }
       break; 
       //=========================screen5==============================================//
       
       //------------------------------screen6--------------------------------------//
     case SCREEN_SUCSESS:  //screen sucsess
-        Cursor(0,0);
-        PrintStr("     Sucsess    ");
-        Cursor(1,0);
-        PrintStr("****************"); 
+      Cursor(0,0);
+      PrintStr("     Sucsess    ");
+      Cursor(1,0);
+      PrintStr("****************"); 
       break; 
       //=========================screen6==============================================//
       
       //------------------------------screen7--------------------------------------//
     case SCREEN_ERROR:
-        Cursor(0,0);
-        PrintStr("  Error:        ");
-        Cursor(1,0);
-        switch (error){
-        case ERROR_NONE:
-          PrintStr("****************"); 
-          break;
-        case ERROR_SW1:
-          PrintStr("END Switch 1    "); 
-          break;
-        case ERROR_SW2:
-          PrintStr("END Switch 2    "); 
-          break;
-        case ERROR_RCP1_TIMEOUT:
-          PrintStr("timeout CTRLP M1"); 
-          break;
-        case ERROR_RCP2_TIMEOUT:
-          PrintStr("timeout CTRLP M2"); 
-          break;
-        case ERROR_SYSTEM:
-          PrintStr("zvonit_4et_ne_to"); 
-          break;    
-        case ERROR_FLASH_W:
-          PrintStr("Flash err write "); 
-          break;           
-        case ERROR_FLASH_R:
-          PrintStr("Flash error read"); 
-          break;      
-        }
+      Cursor(0,0);
+      PrintStr("  Error:        ");
+      Cursor(1,0);
+      switch (error){
+      case ERROR_NONE:
+        PrintStr("****************"); 
+        break;
+      case ERROR_SW1:
+        PrintStr("END Switch 1    "); 
+        break;
+      case ERROR_SW2:
+        PrintStr("END Switch 2    "); 
+        break;
+      case ERROR_RCP1_TIMEOUT:
+        PrintStr("timeout CTRLP M1"); 
+        break;
+      case ERROR_RCP2_TIMEOUT:
+        PrintStr("timeout CTRLP M2"); 
+        break;
+      case ERROR_SYSTEM:
+        PrintStr("zvonit_4et_ne_to"); 
+        break;    
+      case ERROR_FLASH_W:
+        PrintStr("Flash err write "); 
+        break;           
+      case ERROR_FLASH_R:
+        PrintStr("Flash error read"); 
+        break;      
+      }
       break;    
       //=========================screen7==============================================//
       
       //------------------------------screen8--------------------------------------//
     case SCREEN_STARTUEM:  //in work
-    sprintf(R,"SP:%03d  Cur:%03d ",tooth_sp,tooth_sp); //TODO tooth_sp изменить на текущий зуб
-    PrintByCoordinats(0,0,R);
-    sprintf(R,"M%01d R1:%01d R2:%01d  %01d%01d",motor_in_use,M1.ReachCtrlPoint, M2.ReachCtrlPoint,SW1_btn.pos_out,SW2_btn.pos_out); 
-    PrintByCoordinats(1,0,R);   
+      sprintf(R,"SP:%03d  Cur:%03d ",tooth_sp,tooth_sp); //TODO tooth_sp изменить на текущий зуб
+      PrintByCoordinats(0,0,R);
+      sprintf(R,"M%01d R1:%01d R2:%01d  %01d%01d",motor_in_use,M1.ReachCtrlPoint, M2.ReachCtrlPoint,SW1_btn.pos_out,SW2_btn.pos_out); 
+      PrintByCoordinats(1,0,R);   
       
       break;
       //=========================screen8==============================================//
@@ -1237,45 +1237,45 @@ uint32_t Flash_write(){
     error=ERROR_FLASH_W;
     return flash_ret;
   }
-   // Упаковка данных кнопок (9 бит)
-    uint32_t buttons_data = 
-        (UP_btn.pos_normal    << 0) |
-        (DOWN_btn.pos_normal  << 1) |
+  // Упаковка данных кнопок (9 бит)
+  uint32_t buttons_data = 
+    (UP_btn.pos_normal    << 0) |
+      (DOWN_btn.pos_normal  << 1) |
         (PLUS_btn.pos_normal  << 2) |
-        (MINUS_btn.pos_normal << 3) |
-        (ENTER_btn.pos_normal << 4) |
-        (SW1_btn.pos_normal   << 5) |
-        (SW2_btn.pos_normal   << 6) |
-        (RCP1_btn.pos_normal  << 7) |
-        (RCP2_btn.pos_normal  << 8);
-
-    // Запись данных
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[0], buttons_data);
-    
-    // M1 данные
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[1], M1.Pulses_per_rev);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[2], (M1.Max_Speed << 16) | M1.out_frequency);
-    uint8_t m1_inv = M1.Step_DIR_EN_M_inv.Step | (M1.Step_DIR_EN_M_inv.DIR << 1) 
-                   | (M1.Step_DIR_EN_M_inv.EN << 2) | (M1.Step_DIR_EN_M_inv.Mot_Left << 3);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[3], 
-                   m1_inv | (M1.Speed_sp << 8) | (M1.ReachCtrlPoint_avalible << 16));
-
-    // M2 данные
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[4], M2.Pulses_per_rev);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[5], (M2.Max_Speed << 16) | M2.out_frequency);
-    uint8_t m2_inv = M2.Step_DIR_EN_M_inv.Step | (M2.Step_DIR_EN_M_inv.DIR << 1) 
-                   | (M2.Step_DIR_EN_M_inv.EN << 2) | (M2.Step_DIR_EN_M_inv.Mot_Left << 3);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[6], 
-                   m2_inv | (M2.Speed_sp << 8) | (M2.ReachCtrlPoint_avalible << 16));
-
-    // Прочие переменные
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[7], 
-                   (Deept_of_cut_mm << 16) | (tooth_sp << 8) | backlight_on);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[8], Delay_switching);
-
-    HAL_FLASH_Lock();
-    taskEXIT_CRITICAL();
-    return 0xFFFFFFFF; // Успешная запись
+          (MINUS_btn.pos_normal << 3) |
+            (ENTER_btn.pos_normal << 4) |
+              (SW1_btn.pos_normal   << 5) |
+                (SW2_btn.pos_normal   << 6) |
+                  (RCP1_btn.pos_normal  << 7) |
+                    (RCP2_btn.pos_normal  << 8);
+  
+  // Запись данных
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[0], buttons_data);
+  
+  // M1 данные
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[1], M1.Pulses_per_rev);
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[2], (M1.Max_Speed << 16) | M1.out_frequency);
+  uint8_t m1_inv = M1.Step_DIR_EN_M_inv.Step | (M1.Step_DIR_EN_M_inv.DIR << 1) 
+    | (M1.Step_DIR_EN_M_inv.EN << 2) | (M1.Step_DIR_EN_M_inv.Mot_Left << 3);
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[3], 
+                    m1_inv | (M1.Speed_sp << 8) | (M1.ReachCtrlPoint_avalible << 16));
+  
+  // M2 данные
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[4], M2.Pulses_per_rev);
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[5], (M2.Max_Speed << 16) | M2.out_frequency);
+  uint8_t m2_inv = M2.Step_DIR_EN_M_inv.Step | (M2.Step_DIR_EN_M_inv.DIR << 1) 
+    | (M2.Step_DIR_EN_M_inv.EN << 2) | (M2.Step_DIR_EN_M_inv.Mot_Left << 3);
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[6], 
+                    m2_inv | (M2.Speed_sp << 8) | (M2.ReachCtrlPoint_avalible << 16));
+  
+  // Прочие переменные
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[7], 
+                    (Deept_of_cut_mm << 16) | (tooth_sp << 8) | backlight_on);
+  HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[8], Delay_switching);
+  
+  HAL_FLASH_Lock();
+  taskEXIT_CRITICAL();
+  return 0xFFFFFFFF; // Успешная запись
   
 }
 
@@ -1331,13 +1331,13 @@ void Flash_read() {
 }
 
 void Set_period_and_start_TIM(TIM_HandleTypeDef *htim, uint16_t period){
-    __HAL_TIM_SET_AUTORELOAD(htim, period);                //f==1000000/period 
-    // Сбрасываем счётчик таймера
-    __HAL_TIM_SET_COUNTER(htim, 0);
-    // Если таймер остановлен, его можно перезапустить
-    if (__HAL_TIM_GET_COUNTER(htim) == 0) {
-      HAL_TIM_Base_Start(htim); // Запускаем таймер
-    }
+  __HAL_TIM_SET_AUTORELOAD(htim, period);                //f==1000000/period 
+  // Сбрасываем счётчик таймера
+  __HAL_TIM_SET_COUNTER(htim, 0);
+  // Если таймер остановлен, его можно перезапустить
+  if (__HAL_TIM_GET_COUNTER(htim) == 0) {
+    HAL_TIM_Base_Start(htim); // Запускаем таймер
+  }
 }
 void Process_morots_from_IRQ(void){
   static uint8_t toggle=1;

@@ -61,13 +61,13 @@ void Error_Handler(void);
 #define Led_GPIO_Port GPIOC
 #define Btn_UP_Pin GPIO_PIN_2
 #define Btn_UP_GPIO_Port GPIOA
-#define Btn_Minus_Pin GPIO_PIN_3
+#define Btn_Minus_Pin GPIO_PIN_6
 #define Btn_Minus_GPIO_Port GPIOA
 #define Btn_Enter_Pin GPIO_PIN_4
 #define Btn_Enter_GPIO_Port GPIOA
 #define Btn_Down_Pin GPIO_PIN_5
 #define Btn_Down_GPIO_Port GPIOA
-#define Btn_Plus_Pin GPIO_PIN_6
+#define Btn_Plus_Pin GPIO_PIN_3
 #define Btn_Plus_GPIO_Port GPIOA
 #define ReachCtrlPnt2_Pin GPIO_PIN_7
 #define ReachCtrlPnt2_GPIO_Port GPIOA
