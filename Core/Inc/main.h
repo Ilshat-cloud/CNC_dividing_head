@@ -126,6 +126,14 @@ typedef enum {
     TOTAL_SCREENS
 } ScreenID;
 
+typedef enum {
+    STOP,
+    M1_FIRST_ROTATION,
+    M1_ROTATION,
+    M2_CUT_FORWARD,
+    M2_CUT_BACKWARD,
+    TOTAL_PHASES
+} Cut_phase;
 
 typedef enum {
     ERROR_NONE,

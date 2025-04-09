@@ -49,7 +49,7 @@ struct Motor{
   uint32_t      Pulses_per_rev;         //pulses per revolution
   uint16_t      Max_Speed;              //max speed of motor pulses/sec
   int32_t       output_sp;              //how many impulses we have to send
-  uint16_t      out_frequency;          //how fast we will send our impulses //todo double check 
+  uint16_t      out_frequency;          //how fast we will send our impulses
   struct        Step_DIR_EN_M_inv Step_DIR_EN_M_inv;      //magic number for inversion of output pins
   uint8_t       Speed_sp;               //0-100% speed SP from settings
   uint8_t       ReachCtrlPoint_avalible; //0 not used, 1 wait for set, 2 waiting for reset
@@ -62,7 +62,7 @@ struct Motor M1 = {  //мотор для поворота
   0,                 // output_sp
   222,               // out_frequency
   {0, 0, 0, 0},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
-  0,                 //Speed Setpoint 0-100 direct
+  99,                 //Speed Setpoint 0-100 direct
   0                  //Speed Setpoint 0-100 reverse   
 };
 struct Motor M2 = {
@@ -72,7 +72,7 @@ struct Motor M2 = {
   0,                 // output_sp
   222,               // out_frequency
   {0, 0, 0, 0},      // Step_DIR_EN_M_inv (Step=0, DIR=0, EN=0, Mot_Left=0)
-  0,                 //Speed Setpoint 0-100 direct
+  99,                 //Speed Setpoint 0-100 direct
   0                  //Speed Setpoint 0-100 reverse  
 };
 
@@ -205,6 +205,8 @@ void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
   static uint8_t motor_in_use_old=0;
+  static uint8_t cut_phase=0;
+  uint16_t RCP_timer=Delay_switching;
   osDelay(100);
   /* Infinite loop */
   for(;;)
@@ -212,28 +214,123 @@ void StartMainTask(void *argument)
     HAL_IWDG_Refresh(&hiwdg);
     
     osDelay(10);
-    if(flag==SCREEN_STARTUEM){
+    switch (flag) {
+    case SCREEN_STARTUEM:
       if(SW1_btn.pos_out)
       {
         error=ERROR_SW1;
+        break;
       }
       if(SW2_btn.pos_out)
       {
         error=ERROR_SW2;
+        break;
       }
+      if(startyem){  //тут инициализация запуска, поставить начальные значения для tooth sp и другое
+        startyem=0;
+        if (tooth_sp){
+          Pulses_for_tooth=M1.Pulses_per_rev/tooth_sp;
+          current_tooth=tooth_sp;
+        }
+        Pulses_for_deptofcut=M2.Pulses_per_rev*Deept_of_cut_mm;
+        cut_phase=M1_FIRST_ROTATION;
+        motor_in_use=1;
+        M1.output_sp=Pulses_for_tooth;        
+      }
+      break;
+    case SCREEN_SETTINGS3:
+      //TODO сделать тест куда ехать
+      break;
+      
+    default:
+      cut_phase=STOP;
+      break;
     }
+    
+    
+    
     if(motor_in_use_old!=motor_in_use){
       motor_in_use_old=motor_in_use;
       if(motor_in_use==1){
-        uint16_t period=M1.Max_Speed/(100-M1.Speed_sp);
-        Set_period_and_start_TIM(&htim1,period); //1000000/period
+        M1.out_frequency=M1.Max_Speed/(100-M1.Speed_sp);
+        Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
       }else if(motor_in_use==2) {
-        uint16_t period2=M2.Max_Speed/(100-M2.Speed_sp);
-        Set_period_and_start_TIM(&htim1,period2); //1000000/period
+        if (cut_phase==M2_CUT_FORWARD){
+          M2.out_frequency=M2.Max_Speed/(100-M2.Speed_sp);
+          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period
+        }else{
+          M2.out_frequency=M2.Max_Speed;
+          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period       
+        }
       }
     }
+    if(error){
+      flag=SCREEN_ERROR;
+      cut_phase=STOP;
+    }
     
-    
+    switch (cut_phase) {
+    case STOP:
+      motor_in_use=0;
+      M1.output_sp=0;
+      M2.output_sp=0;
+      RCP_timer=Delay_switching;
+      break;
+    case M1_FIRST_ROTATION:
+      if(M1.output_sp==0){  //доехали до конца
+        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+          cut_phase=M2_CUT_FORWARD;
+          motor_in_use=2;
+          M2.output_sp=Pulses_for_deptofcut;
+          RCP_timer=Delay_switching;
+        }
+        if(RCP_timer>10){
+          RCP_timer=RCP_timer-10;
+        }else{
+          error=ERROR_RCP1_TIMEOUT;
+        }
+      }  
+      break;
+    case M2_CUT_FORWARD:
+      if(M2.output_sp==0){  //доехали до конца
+        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+          cut_phase=M2_CUT_BACKWARD;
+          M2.output_sp=Pulses_for_deptofcut*(-1);
+          RCP_timer=Delay_switching;
+        }      
+        if(RCP_timer>10){
+          RCP_timer=RCP_timer-10;
+        }else{
+          error=ERROR_RCP2_TIMEOUT;
+        }
+      }
+      
+      break;
+    case M2_CUT_BACKWARD:
+      if(M2.output_sp==0){  //доехали до конца
+        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+          cut_phase=M2_CUT_BACKWARD;
+          motor_in_use=1;
+          current_tooth--;
+          RCP_timer=Delay_switching;
+          if(current_tooth==0){
+            cut_phase=STOP;               //успешный успех
+            flag=SCREEN_SUCSESS;
+          }else{
+            motor_in_use=1;
+            M1.output_sp=Pulses_for_tooth;
+            cut_phase=M1_FIRST_ROTATION;   
+          }
+        }
+        if(RCP_timer>10){
+          RCP_timer=RCP_timer-10;
+        }else{
+          error=ERROR_RCP2_TIMEOUT;
+        }
+      }  
+      break;
+      
+    }
     
     
   }
@@ -254,6 +351,30 @@ void StartButtonProcessing(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    if(M1.ReachCtrlPoint_avalible){
+      if(M1.ReachCtrlPoint_avalible==2){
+        RCP1_btn.pos_normal=GPIO_PIN_SET;
+        buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
+      }else{
+        RCP1_btn.pos_normal=GPIO_PIN_RESET;
+        buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);      
+      }
+    }else{
+      RCP1_btn.pos_out=GPIO_PIN_SET;
+    }
+    
+    if(M2.ReachCtrlPoint_avalible){
+      if(M1.ReachCtrlPoint_avalible==2){
+        RCP2_btn.pos_normal=GPIO_PIN_SET;
+        buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
+      }else{
+        RCP2_btn.pos_normal=GPIO_PIN_RESET;
+        buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);      
+      }
+    }else{
+      RCP2_btn.pos_out=GPIO_PIN_SET;
+    }
+    
     buttin_proc(&UP_btn,Btn_UP_GPIO_Port,Btn_UP_Pin);
     buttin_proc(&DOWN_btn,Btn_Down_GPIO_Port,Btn_Down_Pin);
     buttin_proc(&PLUS_btn,Btn_Plus_GPIO_Port,Btn_Plus_Pin);
@@ -261,8 +382,9 @@ void StartButtonProcessing(void *argument)
     buttin_proc(&ENTER_btn,Btn_Enter_GPIO_Port,Btn_Enter_Pin);
     buttin_proc_without_tim(&SW1_btn,EndSW1_GPIO_Port,EndSW1_Pin);
     buttin_proc_without_tim(&SW2_btn,EndSW2_GPIO_Port,EndSW2_Pin);
-    buttin_proc_without_tim(&RCP1_btn,ReachCtrlPnt1_GPIO_Port,ReachCtrlPnt1_Pin);
-    buttin_proc_without_tim(&RCP2_btn,ReachCtrlPnt2_GPIO_Port,ReachCtrlPnt2_Pin);
+    
+    
+    
     osDelay(75);
     
     //-------------------navigation--------------------//
@@ -279,10 +401,16 @@ void StartButtonProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            tooth_sp++;  //todo flash save
+            tooth_sp++;  
+            if (tooth_sp >= 250) {
+              tooth_sp = 99;
+            }
           }
           if (MINUS_btn.pos_out){
             tooth_sp--;
+            if (tooth_sp <= 2) {
+              tooth_sp = 2;
+            }
           }
         }
         
@@ -293,15 +421,15 @@ void StartButtonProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            M2.Speed_sp++;  //todo flash save
+            M2.Speed_sp++;  
             if (M2.Speed_sp >= 100) {
               M2.Speed_sp = 99;
             }
           }
           if (MINUS_btn.pos_out){
             M2.Speed_sp--;
-            if (M2.Speed_sp >= 100) {
-              M2.Speed_sp = 99;
+            if (M2.Speed_sp <= 10) {
+              M2.Speed_sp = 10;
             }
           }
         }
@@ -313,7 +441,7 @@ void StartButtonProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            Deept_of_cut_mm+=PLUS_btn.hold_counter;  //todo flash save
+            Deept_of_cut_mm+=PLUS_btn.hold_counter;  
             if (Deept_of_cut_mm >= 1000) {
               Deept_of_cut_mm = 999;
             }
@@ -329,10 +457,6 @@ void StartButtonProcessing(void *argument)
         break;
       case 4:
         if (ENTER_btn.pos_out){
-          if (tooth_sp){
-            Pulses_for_tooth=M1.Pulses_per_rev/tooth_sp;
-          }
-          Pulses_for_deptofcut=M2.Pulses_per_rev*Deept_of_cut_mm;
           screen_enter_set=0;
           screen_cursor=0;
           flag=SCREEN_STARTUEM;  //startyem!!!
@@ -376,7 +500,7 @@ void StartButtonProcessing(void *argument)
         }
         if(screen_enter_set){
           if (PLUS_btn.pos_out){
-            backlight_on=1;  //todo flash save
+            backlight_on=1;  
           }
           if (MINUS_btn.pos_out){
             backlight_on=0;
@@ -388,6 +512,7 @@ void StartButtonProcessing(void *argument)
         if (UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
+          Flash_write();
         }
         
       }else{
@@ -499,6 +624,7 @@ void StartButtonProcessing(void *argument)
         if (UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
+          Flash_write();
         }
       }else{
         if (PLUS_btn.pos_out){
@@ -632,6 +758,7 @@ void StartButtonProcessing(void *argument)
         if (UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
+          Flash_write();
         }
       }else{
         if (PLUS_btn.pos_out){
@@ -704,6 +831,7 @@ void StartButtonProcessing(void *argument)
         if (UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
+          Flash_write();
         }
       }else{
         if (PLUS_btn.pos_out){
@@ -769,6 +897,7 @@ void StartButtonProcessing(void *argument)
         if (UP_btn.pos_out){
           screen_enter_set=0;
           screen_cursor=0;
+          Flash_write();
         }
       }else{
         if (PLUS_btn.pos_out){
@@ -803,7 +932,9 @@ void StartButtonProcessing(void *argument)
       //=========================screen7==============================================//
       //------------------------------screen8--------------------------------------//
     case SCREEN_STARTUEM:  //in work
-      
+      if (UP_btn.pos_out){
+        flag=SCREEN_MAIN;
+      }      
       break;
       //=========================screen8==============================================//
     }    
@@ -837,7 +968,7 @@ void StartLedProcessing(void *argument)
       //------------------------------screen0--------------------------------------//
     case SCREEN_MAIN:  //default screen
       
-      //todo Deept_of_cut_pulses=Deept_of_cut_mm*M2.pulses per mm
+      
       
       if (toggle&0x02){
         sprintf(R,"SP:%03d t  M2:%03d",tooth_sp,M2.Speed_sp); 
@@ -1163,7 +1294,7 @@ void StartLedProcessing(void *argument)
       
       //------------------------------screen8--------------------------------------//
     case SCREEN_STARTUEM:  //in work
-      sprintf(R,"SP:%03d  Cur:%03d ",tooth_sp,tooth_sp); //TODO tooth_sp изменить на текущий зуб
+      sprintf(R,"SP:%03d  Cur:%03d ",tooth_sp,current_tooth); 
       PrintByCoordinats(0,0,R);
       sprintf(R,"M%01d R1:%01d R2:%01d  %01d%01d",motor_in_use,M1.ReachCtrlPoint, M2.ReachCtrlPoint,SW1_btn.pos_out,SW2_btn.pos_out); 
       PrintByCoordinats(1,0,R);   
@@ -1177,9 +1308,7 @@ void StartLedProcessing(void *argument)
     }else{
       HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_RESET);
     }
-    if(error){
-      flag=SCREEN_ERROR;
-    }
+    
   }
   /* USER CODE END StartLedProcessing */
 }
@@ -1355,7 +1484,6 @@ void Process_morots_from_IRQ(void){
         M1.output_sp--;
       }
     }else if (M1.output_sp==0){
-      motor_in_use=0;
       toggle=1;
       HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
       HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
@@ -1390,7 +1518,6 @@ void Process_morots_from_IRQ(void){
     } 
     else if (M2.output_sp == 0) {
       // Остановка M2
-      motor_in_use=0;
       toggle = 1;
       HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
       HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
