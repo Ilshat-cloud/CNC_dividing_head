@@ -211,7 +211,7 @@ void StartMainTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_IWDG_Refresh(&hiwdg);
+    //HAL_IWDG_Refresh(&hiwdg);
     
     osDelay(10);
     switch (flag) {
@@ -278,7 +278,7 @@ void StartMainTask(void *argument)
       break;
     case M1_FIRST_ROTATION:
       if(M1.output_sp==0){  //доехали до конца
-        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+        if(M1.ReachCtrlPoint==GPIO_PIN_SET){
           cut_phase=M2_CUT_FORWARD;
           motor_in_use=2;
           M2.output_sp=Pulses_for_deptofcut;
@@ -293,7 +293,8 @@ void StartMainTask(void *argument)
       break;
     case M2_CUT_FORWARD:
       if(M2.output_sp==0){  //доехали до конца
-        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+        if(M2.ReachCtrlPoint==GPIO_PIN_SET){
+          motor_in_use=0;
           cut_phase=M2_CUT_BACKWARD;
           M2.output_sp=Pulses_for_deptofcut*(-1);
           RCP_timer=Delay_switching;
@@ -307,8 +308,9 @@ void StartMainTask(void *argument)
       
       break;
     case M2_CUT_BACKWARD:
+      motor_in_use=2;
       if(M2.output_sp==0){  //доехали до конца
-        if(RCP1_btn.pos_out==GPIO_PIN_SET){
+        if(M2.ReachCtrlPoint==GPIO_PIN_SET){
           cut_phase=M2_CUT_BACKWARD;
           motor_in_use=1;
           current_tooth--;
@@ -374,7 +376,8 @@ void StartButtonProcessing(void *argument)
     }else{
       RCP2_btn.pos_out=GPIO_PIN_SET;
     }
-    
+    M1.ReachCtrlPoint=RCP1_btn.pos_out;
+    M2.ReachCtrlPoint=RCP2_btn.pos_out;
     buttin_proc(&UP_btn,Btn_UP_GPIO_Port,Btn_UP_Pin);
     buttin_proc(&DOWN_btn,Btn_Down_GPIO_Port,Btn_Down_Pin);
     buttin_proc(&PLUS_btn,Btn_Plus_GPIO_Port,Btn_Plus_Pin);
@@ -561,7 +564,7 @@ void StartButtonProcessing(void *argument)
             }
           }
           if (MINUS_btn.pos_out){
-            Delay_switching-=PLUS_btn.hold_counter;
+            Delay_switching-=MINUS_btn.hold_counter;
             if (Delay_switching>5000){
               Delay_switching=0;
             }
@@ -1014,7 +1017,7 @@ void StartLedProcessing(void *argument)
       if (toggle&0x02){
         sprintf(R,"RCP1:%01d Set Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
         PrintByCoordinats(0,0,R);
-        sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW1_btn.pos_out); 
+        sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW2_btn.pos_out); 
         PrintByCoordinats(1,0,R);
       }else{
         
@@ -1022,7 +1025,7 @@ void StartLedProcessing(void *argument)
         case 0:
           sprintf(R,"RCP1:%01d Set Sw1:%01d",M1.ReachCtrlPoint,SW1_btn.pos_out); 
           PrintByCoordinats(0,0,R);
-          sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW1_btn.pos_out); 
+          sprintf(R,"RCP2:%01d Bl%01d Sw2:%01d",M2.ReachCtrlPoint,backlight_on,SW2_btn.pos_out); 
           PrintByCoordinats(1,0,R);
           break;
         case 1:
@@ -1030,7 +1033,7 @@ void StartLedProcessing(void *argument)
           PrintByCoordinats(0,0,R);
           break;
         case 2:
-          sprintf(R,"RCP2:%01d Bl  Sw2:%01d",M2.ReachCtrlPoint,SW1_btn.pos_out); 
+          sprintf(R,"RCP2:%01d Bl  Sw2:%01d",M2.ReachCtrlPoint,SW2_btn.pos_out); 
           PrintByCoordinats(1,0,R);
           break;
         }
@@ -1465,7 +1468,7 @@ void Set_period_and_start_TIM(TIM_HandleTypeDef *htim, uint16_t period){
   __HAL_TIM_SET_COUNTER(htim, 0);
   // Если таймер остановлен, его можно перезапустить
   if (__HAL_TIM_GET_COUNTER(htim) == 0) {
-    HAL_TIM_Base_Start(htim); // Запускаем таймер
+    HAL_TIM_Base_Start_IT(htim); // Запускаем таймер
   }
 }
 void Process_morots_from_IRQ(void){

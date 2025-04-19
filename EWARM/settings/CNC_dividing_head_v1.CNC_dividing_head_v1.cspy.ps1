@@ -23,9 +23,9 @@
 
 if ($debugfile -eq "")
 {
-& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\user\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.general.xcl" --backend -f "C:\Users\user\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.driver.xcl" 
+& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\user\Documents\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.general.xcl" --backend -f "C:\Users\user\Documents\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.driver.xcl" 
 }
 else
 {
-& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\user\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.general.xcl" --debug_file=$debugfile --backend -f "C:\Users\user\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.driver.xcl" 
+& "C:\Program Files\IAR Systems\Embedded Workbench 9.2\common\bin\cspybat" -f "C:\Users\user\Documents\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.general.xcl" --debug_file=$debugfile --backend -f "C:\Users\user\Documents\CNC_dividing_head\EWARM\settings\CNC_dividing_head_v1.CNC_dividing_head_v1.driver.xcl" 
 }
