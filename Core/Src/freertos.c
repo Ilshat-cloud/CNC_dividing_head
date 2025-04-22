@@ -211,7 +211,7 @@ void StartMainTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    //HAL_IWDG_Refresh(&hiwdg);
+    HAL_IWDG_Refresh(&hiwdg);
     
     osDelay(10);
     switch (flag) {
@@ -252,14 +252,15 @@ void StartMainTask(void *argument)
     if(motor_in_use_old!=motor_in_use){
       motor_in_use_old=motor_in_use;
       if(motor_in_use==1){
-        M1.out_frequency=M1.Max_Speed/(100-M1.Speed_sp);
+        M1.out_frequency=500000/M1.Max_Speed;
         Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
       }else if(motor_in_use==2) {
         if (cut_phase==M2_CUT_FORWARD){
-          M2.out_frequency=M2.Max_Speed/(100-M2.Speed_sp);
+          uint16_t temp=M2.Max_Speed*M2.Speed_sp/100;
+          M2.out_frequency=500000/temp;
           Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period
         }else{
-          M2.out_frequency=M2.Max_Speed;
+          M2.out_frequency=500000/M2.Max_Speed;
           Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period       
         }
       }
@@ -1490,7 +1491,7 @@ void Process_morots_from_IRQ(void){
       toggle=1;
       HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
       HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
-      HAL_TIM_Base_Stop(&htim1);
+      HAL_TIM_Base_Stop_IT(&htim1);
     }else{                      //SP++
       HAL_GPIO_WritePin(DIR1_GPIO_Port,DIR1_Pin,M1.Step_DIR_EN_M_inv.DIR?GPIO_PIN_SET:GPIO_PIN_RESET);  
       HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET);
