@@ -239,6 +239,16 @@ void StartMainTask(void *argument)
       }
       break;
     case SCREEN_SETTINGS3:
+      if(startyem==1){  
+        startyem=0;
+        motor_in_use=1;
+        M1.output_sp=M1.Pulses_per_rev;
+        cut_phase=M1_ROTATION;
+      }else if (startyem==2){
+        motor_in_use=2;
+        M2.output_sp=M2.Pulses_per_rev;
+        cut_phase=M2_ROTATION;
+      }
       //TODO сделать тест куда ехать
       break;
       
@@ -332,7 +342,16 @@ void StartMainTask(void *argument)
         }
       }  
       break;
-      
+    case M1_ROTATION:  //тестовое вращение
+      if(M1.output_sp==0){  //доехали до конца
+        cut_phase=STOP;
+      }  
+      break;
+    case M2_ROTATION:  //тестовое вращение
+      if(M2.output_sp==0){  //доехали до конца
+        cut_phase=STOP;
+      }  
+      break;
     }
     
     
@@ -807,7 +826,15 @@ void StartButtonProcessing(void *argument)
           }
         }
         break;
-      case 2:    
+      case 2:   
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          screen_enter_set=0;
+          screen_cursor=0;
+          startyem=1;
+        }
         break;      
       case 3:           
         if (ENTER_btn.pos_out){
@@ -829,6 +856,15 @@ void StartButtonProcessing(void *argument)
         }
         break;
       case 4:     
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          screen_enter_set=0;
+          screen_cursor=0;
+          startyem=2;
+
+        }
         break;
       }        
       if (screen_enter_set){

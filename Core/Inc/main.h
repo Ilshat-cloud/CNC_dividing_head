@@ -132,6 +132,7 @@ typedef enum {
     M1_ROTATION,
     M2_CUT_FORWARD,
     M2_CUT_BACKWARD,
+    M2_ROTATION,
     TOTAL_PHASES
 } Cut_phase;
 
