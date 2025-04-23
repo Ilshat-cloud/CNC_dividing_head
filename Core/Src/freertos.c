@@ -96,7 +96,7 @@ void Set_period_and_start_TIM(TIM_HandleTypeDef *htim,uint16_t period);
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN Variables */  
+/* USER CODE BEGIN Variables */
 extern IWDG_HandleTypeDef hiwdg;
 uint8_t flag=0, backlight_on=1,motor_in_use=0,startyem=0,error=0;  //screenchoise flag
 uint8_t tooth_sp=0, current_tooth=0,screen_cursor=0, screen_enter_set=0;
@@ -149,49 +149,49 @@ void StartLedProcessing(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-* @brief  FreeRTOS initialization
-* @param  None
-* @retval None
-*/
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   Flash_read();
   /* USER CODE END Init */
-  
+
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
-  
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
-  
+
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
-  
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
-  
+
   /* Create the thread(s) */
   /* creation of mainTask */
   mainTaskHandle = osThreadNew(StartMainTask, NULL, &mainTask_attributes);
-  
+
   /* creation of ButtonProcessin */
   ButtonProcessinHandle = osThreadNew(StartButtonProcessing, NULL, &ButtonProcessin_attributes);
-  
+
   /* creation of LEDProcessing */
   LEDProcessingHandle = osThreadNew(StartLedProcessing, NULL, &LEDProcessing_attributes);
-  
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
-  
+
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-  
+
 }
 
 /* USER CODE BEGIN Header_StartMainTask */
@@ -233,6 +233,7 @@ void StartMainTask(void *argument)
           current_tooth=tooth_sp;
         }
         Pulses_for_deptofcut=M2.Pulses_per_rev*Deept_of_cut_mm;
+        Pulses_for_deptofcut=Pulses_for_deptofcut/10;
         cut_phase=M1_FIRST_ROTATION;
         motor_in_use=1;
         M1.output_sp=Pulses_for_tooth;        
@@ -245,6 +246,7 @@ void StartMainTask(void *argument)
         M1.output_sp=M1.Pulses_per_rev;
         cut_phase=M1_ROTATION;
       }else if (startyem==2){
+        startyem=0;
         motor_in_use=2;
         M2.output_sp=M2.Pulses_per_rev;
         cut_phase=M2_ROTATION;
@@ -408,7 +410,7 @@ void StartButtonProcessing(void *argument)
     
     
     
-    osDelay(75);
+    osDelay(100);
     
     //-------------------navigation--------------------//
     switch(flag){
