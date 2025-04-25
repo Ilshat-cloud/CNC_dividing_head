@@ -29,7 +29,8 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#define CLOCK_CYCLES_PER_SECOND  (72000000)
+#define MAX_RELOAD               (0xFFFF)
 /* USER CODE END Includes */
 
 extern TIM_HandleTypeDef htim1;
@@ -46,7 +47,7 @@ void MX_TIM2_Init(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
-
+void MX_TIM2_Init_tone(uint16_t freq);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

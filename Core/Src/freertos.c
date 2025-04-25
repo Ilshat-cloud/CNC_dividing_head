@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "wh1602.h"
 #include <stdio.h>
+#include "beep.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -139,7 +140,17 @@ const osThreadAttr_t LEDProcessing_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+osMessageQueueId_t BeepQueueHandle;
+const osMessageQueueAttr_t BeepQueue_attributes = {
+  .name = "BeepQueue"
+};
 
+osThreadId_t BeepTaskHandle;
+const osThreadAttr_t BeepTaskHandle_attributes = {
+  .name = "BeepTask",
+  .stack_size = 128 * 1,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* USER CODE END FunctionPrototypes */
 
 void StartMainTask(void *argument);
@@ -172,6 +183,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+  BeepQueueHandle = osMessageQueueNew (10, sizeof(uint16_t), &BeepQueue_attributes);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -186,6 +198,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  BeepTaskHandle = osThreadNew(vBeepTask, NULL, &BeepTaskHandle_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -219,11 +232,13 @@ void StartMainTask(void *argument)
       if(SW1_btn.pos_out)
       {
         error=ERROR_SW1;
+        BeepCustom(BeepType_Fail);
         break;
       }
       if(SW2_btn.pos_out)
       {
         error=ERROR_SW2;
+        BeepCustom(BeepType_Fail);
         break;
       }
       if(startyem){  //тут инициализация запуска, поставить начальные значения для tooth sp и другое
@@ -300,6 +315,7 @@ void StartMainTask(void *argument)
         if(RCP_timer>10){
           RCP_timer=RCP_timer-10;
         }else{
+          BeepCustom(BeepType_Fail);
           error=ERROR_RCP1_TIMEOUT;
         }
       }  
@@ -316,6 +332,7 @@ void StartMainTask(void *argument)
           RCP_timer=RCP_timer-10;
         }else{
           error=ERROR_RCP2_TIMEOUT;
+          BeepCustom(BeepType_Fail);
         }
       }
       
@@ -331,6 +348,7 @@ void StartMainTask(void *argument)
           if(current_tooth==0){
             cut_phase=STOP;               //успешный успех
             flag=SCREEN_SUCSESS;
+            BeepCustom(BeepType_Bonus);
           }else{
             motor_in_use=1;
             M1.output_sp=Pulses_for_tooth;
@@ -341,17 +359,20 @@ void StartMainTask(void *argument)
           RCP_timer=RCP_timer-10;
         }else{
           error=ERROR_RCP2_TIMEOUT;
+          BeepCustom(BeepType_Fail);
         }
       }  
       break;
     case M1_ROTATION:  //тестовое вращение
       if(M1.output_sp==0){  //доехали до конца
         cut_phase=STOP;
+        BeepCustom(BeepType_Success);
       }  
       break;
     case M2_ROTATION:  //тестовое вращение
       if(M2.output_sp==0){  //доехали до конца
         cut_phase=STOP;
+        BeepCustom(BeepType_Success);
       }  
       break;
     }
@@ -967,6 +988,7 @@ void StartButtonProcessing(void *argument)
       //------------------------------screen7--------------------------------------//
     case SCREEN_ERROR:
       if (UP_btn.pos_out){
+        BeepCustom(BeepType_Success);
         error=ERROR_NONE;
         flag=SCREEN_MAIN;
       }
@@ -1344,6 +1366,7 @@ void StartLedProcessing(void *argument)
       break;
       //=========================screen8==============================================//
     }
+    HAL_GPIO_TogglePin(Led_GPIO_Port,Led_Pin);
     osDelay(250);    
     if (backlight_on){
       HAL_GPIO_WritePin(backlight_GPIO_Port,backlight_Pin,GPIO_PIN_SET);
@@ -1406,6 +1429,7 @@ uint32_t Flash_write(){
     HAL_FLASH_Lock();
     taskEXIT_CRITICAL();
     error=ERROR_FLASH_W;
+    BeepCustom(BeepType_Fail);
     return flash_ret;
   }
   // Упаковка данных кнопок (9 бит)
@@ -1455,6 +1479,7 @@ void Flash_read() {
   uint32_t buttons_data = flash_read(User_Page_Adress[0]);
   if (buttons_data==0xFF){
     error=ERROR_FLASH_R;
+    BeepCustom(BeepType_Fail);
     return; //в первый раз? 
   }
   UP_btn.pos_normal = (GPIO_PinState)((buttons_data >> 0) & 0x01);
