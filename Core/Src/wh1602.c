@@ -1,8 +1,7 @@
 
-
 #include "wh1602.h"
-
-
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
 //---Нужная функция для работы с дисплеем, по сути "дергаем ножкой" EN---//
 void PulseLCD()
 {
@@ -79,4 +78,9 @@ void PrintStr(char *Text)
         SendByte(*c, 1);
         c++;
     }
+}
+
+void PrintByCoordinats(char Row, char Col,char *Text){
+  Cursor(Row,Col);
+  PrintStr(Text);
 }

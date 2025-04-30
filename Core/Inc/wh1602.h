@@ -24,4 +24,5 @@ void Cursor(char Row, char Col);
 void ClearLCDScreen(void);
 void InitializeLCD(void);
 void PrintStr(char *Text);
+void PrintByCoordinats(char Row, char Col,char *Text);
 #endif

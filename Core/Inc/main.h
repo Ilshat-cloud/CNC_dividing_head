@@ -61,13 +61,13 @@ void Error_Handler(void);
 #define Led_GPIO_Port GPIOC
 #define Btn_UP_Pin GPIO_PIN_2
 #define Btn_UP_GPIO_Port GPIOA
-#define Btn_Minus_Pin GPIO_PIN_3
+#define Btn_Minus_Pin GPIO_PIN_6
 #define Btn_Minus_GPIO_Port GPIOA
 #define Btn_Enter_Pin GPIO_PIN_4
 #define Btn_Enter_GPIO_Port GPIOA
 #define Btn_Down_Pin GPIO_PIN_5
 #define Btn_Down_GPIO_Port GPIOA
-#define Btn_Plus_Pin GPIO_PIN_6
+#define Btn_Plus_Pin GPIO_PIN_3
 #define Btn_Plus_GPIO_Port GPIOA
 #define ReachCtrlPnt2_Pin GPIO_PIN_7
 #define ReachCtrlPnt2_GPIO_Port GPIOA
@@ -111,6 +111,43 @@ static const int   User_Page_Adress[]={
   0x0800FC40,0x0800FC44,0x0800FC48,0x0800FC4C,0x0800FC50,0x0800FC54,0x0800FC58,0x0800FC5C,
   0x0800FC60,0x0800FC64};
 
+#define delay_for_sucsess_screen 10000
+
+typedef enum {
+    SCREEN_MAIN,
+    SCREEN_MAIN2,
+    SCREEN_SETTINGS1,
+    SCREEN_SETTINGS2,
+    SCREEN_SETTINGS3,
+    SCREEN_SETTINGS4,
+    SCREEN_SUCSESS,
+    SCREEN_ERROR,
+    SCREEN_STARTUEM,
+    TOTAL_SCREENS
+} ScreenID;
+
+typedef enum {
+    STOP,
+    M1_FIRST_ROTATION,
+    M1_ROTATION,
+    M2_CUT_FORWARD,
+    M2_CUT_BACKWARD,
+    M2_ROTATION,
+    TOTAL_PHASES
+} Cut_phase;
+
+typedef enum {
+    ERROR_NONE,
+    ERROR_SW1,
+    ERROR_SW2,
+    ERROR_RCP1_TIMEOUT,
+    ERROR_RCP2_TIMEOUT,
+    ERROR_SYSTEM,
+    ERROR_FLASH_W,
+    ERROR_FLASH_R,
+    TOTAL_ERRORS
+} Eror_summary;
+void Process_morots_from_IRQ(void);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
