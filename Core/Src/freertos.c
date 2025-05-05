@@ -135,7 +135,7 @@ osThreadId_t LEDProcessingHandle;
 const osThreadAttr_t LEDProcessing_attributes = {
   .name = "LEDProcessing",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,7 +148,7 @@ const osMessageQueueAttr_t BeepQueue_attributes = {
 osThreadId_t BeepTaskHandle;
 const osThreadAttr_t BeepTaskHandle_attributes = {
   .name = "BeepTask",
-  .stack_size = 128 * 1,
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE END FunctionPrototypes */

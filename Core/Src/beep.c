@@ -10,7 +10,7 @@
 #include "tim.h"
 #include "main.h"
 
-extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
 extern osMessageQueueId_t BeepQueueHandle;
 extern void MX_TIM2_Init_tone(uint16_t freq);
 
@@ -29,52 +29,74 @@ void vBeepTask( void *argument)
 		{
 			if (beepType == BeepType_Success)
 			{
-				Sound (1396, 173);
-				osDelay (192 + 96);
-				Sound (1396, 86);
+				Sound (100, 100);
+                                Sound (200, 100);
+                                Sound (400, 100);
+                                Sound (800, 100);
+                                Sound (1200, 100);
+                                Sound (1400, 100);
+                                Sound (1600, 100);
+                                Sound (1900, 100);
+                                Sound (2300, 100);
+                                Sound (2600, 100);
+                                Sound (2900, 100);
+                                Sound (3200, 100);
+                                Sound (3500, 100);
 			}
 			else if (beepType == BeepType_Fail)
 			{
-				Sound (200, 500);
+				Sound (3500, 100);
+                                Sound (3200, 100);
+                                Sound (2900, 100);
+                                Sound (2600, 100);
+                                Sound (2300, 100);
+                                Sound (1900, 100);
+                                Sound (1600, 100);
+                                Sound (1400, 100);
+                                Sound (1200, 100);
+                                Sound (800, 100);
+                                Sound (400, 100);
+                                Sound (200, 100);
+                                Sound (100, 100);
 			}
 			else if (beepType == BeepType_Bonus)
 			{
-				Sound (440, 250);
+				Sound (2200, 250);
 				osDelay(250);
-				Sound (165, 250);
+				Sound (1600, 250);
 				osDelay(250);
-				Sound (440, 250);
+				Sound (2200, 250);
 				osDelay(500);
 
-				Sound (440, 250);
+				Sound (2200, 250);
 				osDelay(250);
-				Sound (165, 250);
+				Sound (1600, 250);
 				osDelay(250);
-				Sound (440, 250);
+				Sound (2200, 250);
 				osDelay(500);
 
-				Sound (330, 125);
+				Sound (1770, 125);
 				osDelay(125);
-				Sound (294, 125);
+				Sound (1650, 125);
 				osDelay(125);
-				Sound (262, 125);
+				Sound (1450, 125);
 				osDelay(124);
-				Sound (494, 125);
+				Sound (2400, 125);
 				osDelay(125);
-				Sound (440, 125);
+				Sound (2200, 125);
 				osDelay(125);
-				Sound (494, 125);
+				Sound (2400, 125);
 				osDelay(125);
-				Sound (262, 125);
+				Sound (1450, 125);
 				osDelay(125);
-				Sound (294, 125);
+				Sound (1650, 125);
 				osDelay(125);
 
-				Sound (330, 250);
+				Sound (1770, 250);
 				osDelay(250);
-				Sound (165, 250);
+				Sound (1600, 250);
 				osDelay(250);
-				Sound (440, 250);
+				Sound (2200, 250);
 			}
 			else
 			{
@@ -106,10 +128,10 @@ static void Sound (uint32_t tone, uint32_t delay)
 {
 
 	MX_TIM2_Init_tone (tone);
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	osDelay(delay);
-	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-	HAL_TIM_Base_DeInit (&htim1);
+	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_Base_DeInit (&htim2);
 
 }
 
