@@ -213,7 +213,7 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
 /* TIM2 init function */
 void MX_TIM2_Init_tone(uint16_t freq)
 {
-	if((freq == 0)||(freq > CLOCK_CYCLES_PER_SECOND/2))
+	if(freq == 0)
 		return;
     uint32_t period_cycles = CLOCK_CYCLES_PER_SECOND / freq;
     uint16_t prescaler = (uint16_t)(period_cycles / MAX_RELOAD + 1);

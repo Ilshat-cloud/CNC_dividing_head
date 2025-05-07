@@ -217,7 +217,6 @@ void MX_FREERTOS_Init(void) {
 void StartMainTask(void *argument)
 {
   /* USER CODE BEGIN StartMainTask */
-  static uint8_t motor_in_use_old=0;
   static uint8_t cut_phase=0;
   uint16_t RCP_timer=Delay_switching;
   osDelay(100);
@@ -251,7 +250,9 @@ void StartMainTask(void *argument)
         Pulses_for_deptofcut=Pulses_for_deptofcut/10;
         cut_phase=M1_FIRST_ROTATION;
         motor_in_use=1;
-        M1.output_sp=Pulses_for_tooth;        
+        M1.output_sp=Pulses_for_tooth;      
+        M1.out_frequency=500000/M1.Max_Speed;
+        Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
       }
       break;
     case SCREEN_SETTINGS3:
@@ -260,11 +261,33 @@ void StartMainTask(void *argument)
         motor_in_use=1;
         M1.output_sp=M1.Pulses_per_rev;
         cut_phase=M1_ROTATION;
+        M1.out_frequency=500000/M1.Max_Speed;
+        Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
       }else if (startyem==2){
         startyem=0;
         motor_in_use=2;
         M2.output_sp=M2.Pulses_per_rev;
         cut_phase=M2_ROTATION;
+        M2.out_frequency=500000/M2.Max_Speed;
+        Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period 
+      }
+      //TODO сделать тест куда ехать
+      break;
+    case SCREEN_SETTINGS4:
+      if(startyem==1){  
+        startyem=0;
+        motor_in_use=1;
+        M1.output_sp=M1.Pulses_per_rev;
+        cut_phase=M1_ROTATION;
+        M1.out_frequency=500000/M1.Max_Speed;
+        Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period        
+      }else if (startyem==2){
+        startyem=0;
+        motor_in_use=2;
+        M2.output_sp=M2.Pulses_per_rev;
+        cut_phase=M2_ROTATION;
+        M2.out_frequency=500000/M2.Max_Speed;
+        Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period 
       }
       //TODO сделать тест куда ехать
       break;
@@ -273,25 +296,7 @@ void StartMainTask(void *argument)
       cut_phase=STOP;
       break;
     }
-    
-    
-    
-    if(motor_in_use_old!=motor_in_use){
-      motor_in_use_old=motor_in_use;
-      if(motor_in_use==1){
-        M1.out_frequency=500000/M1.Max_Speed;
-        Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
-      }else if(motor_in_use==2) {
-        if (cut_phase==M2_CUT_FORWARD){
-          uint16_t temp=M2.Max_Speed*M2.Speed_sp/100;
-          M2.out_frequency=500000/temp;
-          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period
-        }else{
-          M2.out_frequency=500000/M2.Max_Speed;
-          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period       
-        }
-      }
-    }
+
     if(error){
       flag=SCREEN_ERROR;
       cut_phase=STOP;
@@ -311,6 +316,9 @@ void StartMainTask(void *argument)
           motor_in_use=2;
           M2.output_sp=Pulses_for_deptofcut;
           RCP_timer=Delay_switching;
+          uint16_t temp=M2.Max_Speed*M2.Speed_sp/100;
+          M2.out_frequency=500000/temp;
+          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period
         }
         if(RCP_timer>10){
           RCP_timer=RCP_timer-10;
@@ -323,10 +331,12 @@ void StartMainTask(void *argument)
     case M2_CUT_FORWARD:
       if(M2.output_sp==0){  //доехали до конца
         if(M2.ReachCtrlPoint==GPIO_PIN_SET){
-          motor_in_use=0;
+          motor_in_use=2;
           cut_phase=M2_CUT_BACKWARD;
           M2.output_sp=Pulses_for_deptofcut*(-1);
           RCP_timer=Delay_switching;
+          M2.out_frequency=500000/M2.Max_Speed;
+          Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period   
         }      
         if(RCP_timer>10){
           RCP_timer=RCP_timer-10;
@@ -338,11 +348,8 @@ void StartMainTask(void *argument)
       
       break;
     case M2_CUT_BACKWARD:
-      motor_in_use=2;
       if(M2.output_sp==0){  //доехали до конца
         if(M2.ReachCtrlPoint==GPIO_PIN_SET){
-          cut_phase=M2_CUT_BACKWARD;
-          motor_in_use=1;
           current_tooth--;
           RCP_timer=Delay_switching;
           if(current_tooth==0){
@@ -352,7 +359,9 @@ void StartMainTask(void *argument)
           }else{
             motor_in_use=1;
             M1.output_sp=Pulses_for_tooth;
-            cut_phase=M1_FIRST_ROTATION;   
+            cut_phase=M1_FIRST_ROTATION; 
+            M1.out_frequency=500000/M1.Max_Speed;
+            Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
           }
         }
         if(RCP_timer>10){
@@ -685,6 +694,10 @@ void StartButtonProcessing(void *argument)
           flag=SCREEN_SETTINGS2;  //go to next menu  
           screen_cursor=0;
         }
+        if (UP_btn.pos_out){
+          flag=SCREEN_MAIN;  //go to next menu  
+          screen_cursor=0;
+        }
       }
       break;        
       //=========================screen2==============================================//
@@ -819,6 +832,10 @@ void StartButtonProcessing(void *argument)
           flag=SCREEN_SETTINGS3;  //go to next menu  
           screen_cursor=0;
         }
+        if (UP_btn.pos_out){
+          flag=SCREEN_SETTINGS1;  //go to next menu  
+          screen_cursor=0;
+        }
       }
       break; 
       
@@ -909,6 +926,10 @@ void StartButtonProcessing(void *argument)
           flag=SCREEN_SETTINGS4;  //go to next menu  
           screen_cursor=0;
         }
+        if (UP_btn.pos_out){
+          flag=SCREEN_SETTINGS2;  //go to next menu  
+          screen_cursor=0;
+        }
       }
       
       break; 
@@ -935,7 +956,14 @@ void StartButtonProcessing(void *argument)
         }
         break;
       case 2:    
-        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          screen_enter_set=0;
+          screen_cursor=0;
+          startyem=1;
+        }
         break;      
       case 3:   
         
@@ -952,7 +980,15 @@ void StartButtonProcessing(void *argument)
         }
         break;
       case 4:     
-        
+        if (ENTER_btn.pos_out){
+          screen_enter_set=1;
+        }
+        if(screen_enter_set){
+          screen_enter_set=0;
+          screen_cursor=0;
+          startyem=2;
+          
+        }
         break;
       }
       
@@ -973,6 +1009,10 @@ void StartButtonProcessing(void *argument)
         }
         if (DOWN_btn.pos_out){
           flag=SCREEN_MAIN;  //go to next menu  
+          screen_cursor=0;
+        }
+        if (UP_btn.pos_out){
+          flag=SCREEN_SETTINGS1;  //go to next menu  
           screen_cursor=0;
         }
       }
@@ -1530,10 +1570,8 @@ void Set_period_and_start_TIM(TIM_HandleTypeDef *htim, uint16_t period){
   __HAL_TIM_SET_AUTORELOAD(htim, period);                //f==1000000/period 
   // Сбрасываем счётчик таймера
   __HAL_TIM_SET_COUNTER(htim, 0);
-  // Если таймер остановлен, его можно перезапустить
-  if (__HAL_TIM_GET_COUNTER(htim) == 0) {
     HAL_TIM_Base_Start_IT(htim); // Запускаем таймер
-  }
+
 }
 void Process_morots_from_IRQ(void){
   static uint8_t toggle=1;
@@ -1604,7 +1642,13 @@ void Process_morots_from_IRQ(void){
         M2.output_sp++;
       }
     }
-  }muygtfutfutfuguy
+  }else{
+    HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_TIM_Base_Stop(&htim1); // Или другой таймер, если используется отдельный
+  }
 }
 /* USER CODE END Application */
 
