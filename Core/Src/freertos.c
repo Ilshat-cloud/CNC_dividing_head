@@ -56,7 +56,7 @@ struct Motor{
   uint8_t       ReachCtrlPoint_avalible; //0 not used, 1 wait for set, 2 waiting for reset
 };
 
-struct Motor M1 = {  //мотор для поворота
+struct Motor M1 = {  //РјРѕС‚РѕСЂ РґР»СЏ РїРѕРІРѕСЂРѕС‚Р°
   GPIO_PIN_RESET,    // ReachCtrlPoint
   72000,             // Pulses_per_rev
   54000,             // Max_Speed
@@ -219,6 +219,7 @@ void StartMainTask(void *argument)
   /* USER CODE BEGIN StartMainTask */
   static uint8_t cut_phase=0;
   uint16_t RCP_timer=Delay_switching;
+  uint32_t timer =osKernelGetTickCount();
   osDelay(100);
   /* Infinite loop */
   for(;;)
@@ -240,8 +241,10 @@ void StartMainTask(void *argument)
         BeepCustom(BeepType_Fail);
         break;
       }
-      if(startyem){  //тут инициализация запуска, поставить начальные значения для tooth sp и другое
+      if(startyem){  //С‚СѓС‚ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р·Р°РїСѓСЃРєР°, РїРѕСЃС‚Р°РІРёС‚СЊ РЅР°С‡Р°Р»СЊРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ РґР»СЏ tooth sp Рё РґСЂСѓРіРѕРµ
         startyem=0;
+        HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
+        HAL_GPIO_WritePin(EN2_GPIO_Port,EN2_Pin,M2.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
         if (tooth_sp){
           Pulses_for_tooth=M1.Pulses_per_rev/tooth_sp;
           current_tooth=tooth_sp;
@@ -258,12 +261,14 @@ void StartMainTask(void *argument)
     case SCREEN_SETTINGS3:
       if(startyem==1){  
         startyem=0;
+        HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
         motor_in_use=1;
         M1.output_sp=M1.Pulses_per_rev;
         cut_phase=M1_ROTATION;
         M1.out_frequency=500000/M1.Max_Speed;
         Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period
       }else if (startyem==2){
+        HAL_GPIO_WritePin(EN2_GPIO_Port,EN2_Pin,M2.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
         startyem=0;
         motor_in_use=2;
         M2.output_sp=M2.Pulses_per_rev;
@@ -271,10 +276,11 @@ void StartMainTask(void *argument)
         M2.out_frequency=500000/M2.Max_Speed;
         Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period 
       }
-      //TODO сделать тест куда ехать
+      //TODO СЃРґРµР»Р°С‚СЊ С‚РµСЃС‚ РєСѓРґР° РµС…Р°С‚СЊ
       break;
     case SCREEN_SETTINGS4:
       if(startyem==1){  
+        HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
         startyem=0;
         motor_in_use=1;
         M1.output_sp=M1.Pulses_per_rev;
@@ -283,13 +289,14 @@ void StartMainTask(void *argument)
         Set_period_and_start_TIM(&htim1,M1.out_frequency); //1000000/period        
       }else if (startyem==2){
         startyem=0;
+        HAL_GPIO_WritePin(EN2_GPIO_Port,EN2_Pin,M2.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
         motor_in_use=2;
         M2.output_sp=M2.Pulses_per_rev;
         cut_phase=M2_ROTATION;
         M2.out_frequency=500000/M2.Max_Speed;
         Set_period_and_start_TIM(&htim1,M2.out_frequency); //1000000/period 
       }
-      //TODO сделать тест куда ехать
+      //TODO СЃРґРµР»Р°С‚СЊ С‚РµСЃС‚ РєСѓРґР° РµС…Р°С‚СЊ
       break;
       
     default:
@@ -308,9 +315,11 @@ void StartMainTask(void *argument)
       M1.output_sp=0;
       M2.output_sp=0;
       RCP_timer=Delay_switching;
+        HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_RESET); 
+        HAL_GPIO_WritePin(EN2_GPIO_Port,EN2_Pin,M2.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_RESET);  
       break;
     case M1_FIRST_ROTATION:
-      if(M1.output_sp==0){  //доехали до конца
+      if(M1.output_sp==0){  //РґРѕРµС…Р°Р»Рё РґРѕ РєРѕРЅС†Р°
         if(M1.ReachCtrlPoint==GPIO_PIN_SET){
           cut_phase=M2_CUT_FORWARD;
           motor_in_use=2;
@@ -329,7 +338,7 @@ void StartMainTask(void *argument)
       }  
       break;
     case M2_CUT_FORWARD:
-      if(M2.output_sp==0){  //доехали до конца
+      if(M2.output_sp==0){  //РґРѕРµС…Р°Р»Рё РґРѕ РєРѕРЅС†Р°
         if(M2.ReachCtrlPoint==GPIO_PIN_SET){
           motor_in_use=2;
           cut_phase=M2_CUT_BACKWARD;
@@ -348,14 +357,16 @@ void StartMainTask(void *argument)
       
       break;
     case M2_CUT_BACKWARD:
-      if(M2.output_sp==0){  //доехали до конца
+      if(M2.output_sp==0){  //РґРѕРµС…Р°Р»Рё РґРѕ РєРѕРЅС†Р°
         if(M2.ReachCtrlPoint==GPIO_PIN_SET){
           current_tooth--;
           RCP_timer=Delay_switching;
           if(current_tooth==0){
-            cut_phase=STOP;               //успешный успех
+
             flag=SCREEN_SUCSESS;
             BeepCustom(BeepType_Bonus);
+            osDelay(2000); //РґР°РґРёРј РґРѕРµС…Р°С‚СЊ РґРѕ РєРѕРЅС†Р°
+            cut_phase=STOP;               //СѓСЃРїРµС€РЅС‹Р№ СѓСЃРїРµС…
           }else{
             motor_in_use=1;
             M1.output_sp=Pulses_for_tooth;
@@ -372,15 +383,17 @@ void StartMainTask(void *argument)
         }
       }  
       break;
-    case M1_ROTATION:  //тестовое вращение
-      if(M1.output_sp==0){  //доехали до конца
-        cut_phase=STOP;
+    case M1_ROTATION:  //С‚РµСЃС‚РѕРІРѕРµ РІСЂР°С‰РµРЅРёРµ
+      if(M1.output_sp==0){  //РґРѕРµС…Р°Р»Рё РґРѕ РєРѕРЅС†Р°
+        osDelay(2000); //РґР°РґРёРј РґРѕРµС…Р°С‚СЊ РґРѕ РєРѕРЅС†Р°
+        cut_phase=STOP;               //СѓСЃРїРµС€РЅС‹Р№ СѓСЃРїРµС…
         BeepCustom(BeepType_Success);
       }  
       break;
-    case M2_ROTATION:  //тестовое вращение
-      if(M2.output_sp==0){  //доехали до конца
-        cut_phase=STOP;
+    case M2_ROTATION:  //С‚РµСЃС‚РѕРІРѕРµ РІСЂР°С‰РµРЅРёРµ
+      if(M2.output_sp==0){  //РґРѕРµС…Р°Р»Рё РґРѕ РєРѕРЅС†Р°
+        osDelay(2000); //РґР°РґРёРј РґРѕРµС…Р°С‚СЊ РґРѕ РєРѕРЅС†Р°
+        cut_phase=STOP;               //СѓСЃРїРµС€РЅС‹Р№ СѓСЃРїРµС…
         BeepCustom(BeepType_Success);
       }  
       break;
@@ -1421,8 +1434,8 @@ void StartLedProcessing(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 /*
-проверяем только pos_out, он зависит от нормального положения кнопки и выставляется через 2 скана нажатия (фильтр дребезга + конденсаторы на плате еще)
-так же есть счетчик для удержания, в общем все нормалды
+РїСЂРѕРІРµСЂСЏРµРј С‚РѕР»СЊРєРѕ pos_out, РѕРЅ Р·Р°РІРёСЃРёС‚ РѕС‚ РЅРѕСЂРјР°Р»СЊРЅРѕРіРѕ РїРѕР»РѕР¶РµРЅРёСЏ РєРЅРѕРїРєРё Рё РІС‹СЃС‚Р°РІР»СЏРµС‚СЃСЏ С‡РµСЂРµР· 2 СЃРєР°РЅР° РЅР°Р¶Р°С‚РёСЏ (С„РёР»СЊС‚СЂ РґСЂРµР±РµР·РіР° + РєРѕРЅРґРµРЅСЃР°С‚РѕСЂС‹ РЅР° РїР»Р°С‚Рµ РµС‰Рµ)
+С‚Р°Рє Р¶Рµ РµСЃС‚СЊ СЃС‡РµС‚С‡РёРє РґР»СЏ СѓРґРµСЂР¶Р°РЅРёСЏ, РІ РѕР±С‰РµРј РІСЃРµ РЅРѕСЂРјР°Р»РґС‹
 */
 void buttin_proc(struct button_without_fix *button,GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin){
   button->pos_previous=button->pos_current;
@@ -1472,7 +1485,7 @@ uint32_t Flash_write(){
     BeepCustom(BeepType_Fail);
     return flash_ret;
   }
-  // Упаковка данных кнопок (9 бит)
+  // РЈРїР°РєРѕРІРєР° РґР°РЅРЅС‹С… РєРЅРѕРїРѕРє (9 Р±РёС‚)
   uint32_t buttons_data = 
     (UP_btn.pos_normal    << 0) |
       (DOWN_btn.pos_normal  << 1) |
@@ -1484,10 +1497,10 @@ uint32_t Flash_write(){
                   (RCP1_btn.pos_normal  << 7) |
                     (RCP2_btn.pos_normal  << 8);
   
-  // Запись данных
+  // Р—Р°РїРёСЃСЊ РґР°РЅРЅС‹С…
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[0], buttons_data);
   
-  // M1 данные
+  // M1 РґР°РЅРЅС‹Рµ
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[1], M1.Pulses_per_rev);
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[2], (M1.Max_Speed << 16) | M1.out_frequency);
   uint8_t m1_inv = M1.Step_DIR_EN_M_inv.Step | (M1.Step_DIR_EN_M_inv.DIR << 1) 
@@ -1495,7 +1508,7 @@ uint32_t Flash_write(){
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[3], 
                     m1_inv | (M1.Speed_sp << 8) | (M1.ReachCtrlPoint_avalible << 16));
   
-  // M2 данные
+  // M2 РґР°РЅРЅС‹Рµ
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[4], M2.Pulses_per_rev);
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[5], (M2.Max_Speed << 16) | M2.out_frequency);
   uint8_t m2_inv = M2.Step_DIR_EN_M_inv.Step | (M2.Step_DIR_EN_M_inv.DIR << 1) 
@@ -1503,24 +1516,24 @@ uint32_t Flash_write(){
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[6], 
                     m2_inv | (M2.Speed_sp << 8) | (M2.ReachCtrlPoint_avalible << 16));
   
-  // Прочие переменные
+  // РџСЂРѕС‡РёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[7], 
                     (Deept_of_cut_mm << 16) | (tooth_sp << 8) | backlight_on);
   HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, User_Page_Adress[8], Delay_switching);
   
   HAL_FLASH_Lock();
   taskEXIT_CRITICAL();
-  return 0xFFFFFFFF; // Успешная запись
+  return 0xFFFFFFFF; // РЈСЃРїРµС€РЅР°СЏ Р·Р°РїРёСЃСЊ
   
 }
 
 void Flash_read() {
-  // Чтение данных кнопок
+  // Р§С‚РµРЅРёРµ РґР°РЅРЅС‹С… РєРЅРѕРїРѕРє
   uint32_t buttons_data = flash_read(User_Page_Adress[0]);
   if (buttons_data==0xFF){
     error=ERROR_FLASH_R;
     BeepCustom(BeepType_Fail);
-    return; //в первый раз? 
+    return; //РІ РїРµСЂРІС‹Р№ СЂР°Р·? 
   }
   UP_btn.pos_normal = (GPIO_PinState)((buttons_data >> 0) & 0x01);
   DOWN_btn.pos_normal = (GPIO_PinState)((buttons_data >> 1) & 0x01);
@@ -1532,7 +1545,7 @@ void Flash_read() {
   RCP1_btn.pos_normal = (GPIO_PinState)((buttons_data >> 7) & 0x01);
   RCP2_btn.pos_normal = (GPIO_PinState)((buttons_data >> 8) & 0x01);
   
-  // M1 данные
+  // M1 РґР°РЅРЅС‹Рµ
   M1.Pulses_per_rev = flash_read(User_Page_Adress[1]);
   uint32_t m1_speed = flash_read(User_Page_Adress[2]);
   M1.Max_Speed = (m1_speed >> 16) & 0xFFFF;
@@ -1545,7 +1558,7 @@ void Flash_read() {
   M1.Speed_sp = (m1_set >> 8) & 0xFF;
   M1.ReachCtrlPoint_avalible = (m1_set >> 16) & 0xFF;
   
-  // M2 данные (аналогично M1)
+  // M2 РґР°РЅРЅС‹Рµ (Р°РЅР°Р»РѕРіРёС‡РЅРѕ M1)
   M2.Pulses_per_rev = flash_read(User_Page_Adress[4]);
   uint32_t m2_speed = flash_read(User_Page_Adress[5]);
   M2.Max_Speed = (m2_speed >> 16) & 0xFFFF;
@@ -1558,7 +1571,7 @@ void Flash_read() {
   M2.Speed_sp = (m2_set >> 8) & 0xFF;
   M2.ReachCtrlPoint_avalible = (m2_set >> 16) & 0xFF;
   
-  // Прочие переменные
+  // РџСЂРѕС‡РёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ
   uint32_t vars1 = flash_read(User_Page_Adress[7]);
   backlight_on = vars1 & 0xFF;
   tooth_sp = (vars1 >> 8) & 0xFF;
@@ -1568,9 +1581,9 @@ void Flash_read() {
 
 void Set_period_and_start_TIM(TIM_HandleTypeDef *htim, uint16_t period){
   __HAL_TIM_SET_AUTORELOAD(htim, period);                //f==1000000/period 
-  // Сбрасываем счётчик таймера
+  // РЎР±СЂР°СЃС‹РІР°РµРј СЃС‡С‘С‚С‡РёРє С‚Р°Р№РјРµСЂР°
   __HAL_TIM_SET_COUNTER(htim, 0);
-    HAL_TIM_Base_Start_IT(htim); // Запускаем таймер
+    HAL_TIM_Base_Start_IT(htim); // Р—Р°РїСѓСЃРєР°РµРј С‚Р°Р№РјРµСЂ
 
 }
 void Process_morots_from_IRQ(void){
@@ -1578,7 +1591,7 @@ void Process_morots_from_IRQ(void){
   if(motor_in_use==1){
     if(M1.output_sp>0)          //SP--
     {
-      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
+      //HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET); 
       HAL_GPIO_WritePin(DIR1_GPIO_Port,DIR1_Pin,M1.Step_DIR_EN_M_inv.DIR?GPIO_PIN_RESET:GPIO_PIN_SET);  
       if(toggle){
         toggle=0;
@@ -1591,11 +1604,11 @@ void Process_morots_from_IRQ(void){
     }else if (M1.output_sp==0){
       toggle=1;
       HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
+      //HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
       HAL_TIM_Base_Stop_IT(&htim1);
     }else{                      //SP++
       HAL_GPIO_WritePin(DIR1_GPIO_Port,DIR1_Pin,M1.Step_DIR_EN_M_inv.DIR?GPIO_PIN_SET:GPIO_PIN_RESET);  
-      HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET);
+      //HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_RESET:GPIO_PIN_SET);
       if (toggle) {
         HAL_GPIO_WritePin(STEP1_GPIO_Port, STEP1_Pin, M1.Step_DIR_EN_M_inv.Step ? GPIO_PIN_SET : GPIO_PIN_RESET);
         toggle = 0;
@@ -1608,8 +1621,8 @@ void Process_morots_from_IRQ(void){
     
   }else if(motor_in_use==2){
     if (M2.output_sp > 0) {
-      // Генерация шагов для M2 (прямое направление)
-      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      // Р“РµРЅРµСЂР°С†РёСЏ С€Р°РіРѕРІ РґР»СЏ M2 (РїСЂСЏРјРѕРµ РЅР°РїСЂР°РІР»РµРЅРёРµ)
+      //HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
       HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, M2.Step_DIR_EN_M_inv.DIR ? GPIO_PIN_RESET : GPIO_PIN_SET);
       
       if (toggle) {
@@ -1622,15 +1635,15 @@ void Process_morots_from_IRQ(void){
       }
     } 
     else if (M2.output_sp == 0) {
-      // Остановка M2
+      // РћСЃС‚Р°РЅРѕРІРєР° M2
       toggle = 1;
       HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
-      HAL_TIM_Base_Stop(&htim1); // Или другой таймер, если используется отдельный
+      //HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
+      HAL_TIM_Base_Stop(&htim1); // РР»Рё РґСЂСѓРіРѕР№ С‚Р°Р№РјРµСЂ, РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РѕС‚РґРµР»СЊРЅС‹Р№
     } 
     else {
-      // Генерация шагов для M2 (обратное направление)
-      HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      // Р“РµРЅРµСЂР°С†РёСЏ С€Р°РіРѕРІ РґР»СЏ M2 (РѕР±СЂР°С‚РЅРѕРµ РЅР°РїСЂР°РІР»РµРЅРёРµ)
+      //HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_RESET : GPIO_PIN_SET);
       HAL_GPIO_WritePin(DIR2_GPIO_Port, DIR2_Pin, M2.Step_DIR_EN_M_inv.DIR ? GPIO_PIN_SET : GPIO_PIN_RESET);
       
       if (toggle) {
@@ -1644,10 +1657,10 @@ void Process_morots_from_IRQ(void){
     }
   }else{
     HAL_GPIO_WritePin(STEP1_GPIO_Port,STEP1_Pin,M1.Step_DIR_EN_M_inv.Step?GPIO_PIN_SET:GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(EN1_GPIO_Port,EN1_Pin,M1.Step_DIR_EN_M_inv.EN?GPIO_PIN_SET:GPIO_PIN_RESET);
     HAL_GPIO_WritePin(STEP2_GPIO_Port, STEP2_Pin, M2.Step_DIR_EN_M_inv.Step ? GPIO_PIN_RESET : GPIO_PIN_SET);
-    HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_TIM_Base_Stop(&htim1); // Или другой таймер, если используется отдельный
+    //HAL_GPIO_WritePin(EN2_GPIO_Port, EN2_Pin, M2.Step_DIR_EN_M_inv.EN ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_TIM_Base_Stop(&htim1); // РР»Рё РґСЂСѓРіРѕР№ С‚Р°Р№РјРµСЂ, РµСЃР»Рё РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РѕС‚РґРµР»СЊРЅС‹Р№
   }
 }
 /* USER CODE END Application */

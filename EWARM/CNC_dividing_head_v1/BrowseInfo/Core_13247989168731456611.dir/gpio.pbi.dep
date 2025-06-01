@@ -1,5 +1,7 @@
-C:\Users\user\Documents\CNC_dividing_head\EWARM\CNC_dividing_head_v1\BrowseInfo\STM32F1xx_HAL_Driver_9701002599162248031.dir\stm32f1xx_hal_tim.pbi: \
-  C:\Users\user\Documents\CNC_dividing_head\Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_tim.c \
+C:\Users\user\Documents\CNC_dividing_head\EWARM\CNC_dividing_head_v1\BrowseInfo\Core_13247989168731456611.dir\gpio.pbi: \
+  C:\Users\user\Documents\CNC_dividing_head\Core\Src\gpio.c \
+  C:\Users\user\Documents\CNC_dividing_head\EWARM\..\Core\Inc\gpio.h \
+  C:\Users\user\Documents\CNC_dividing_head\EWARM\..\Core\Inc\main.h \
   C:\Users\user\Documents\CNC_dividing_head\EWARM\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h \
   C:\Users\user\Documents\CNC_dividing_head\EWARM\..\Core\Inc\stm32f1xx_hal_conf.h \
   C:\Users\user\Documents\CNC_dividing_head\EWARM\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h \
